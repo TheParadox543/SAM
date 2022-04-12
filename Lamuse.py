@@ -62,6 +62,7 @@ sasha_bot = 862060226798682174
 scores_channel = 898287795733417984
 mile_channel = 929606005535408159
 workshop_channel = 931498728760672276
+dank_channel = 903015721653653584
 
 dishonorable_id:int = 894404278507167775
 countaholic_id:int = 893225025455390760
@@ -134,187 +135,6 @@ async def on_ready():
     await bot.change_presence(activity=discord.Game("?help"))
     check_time.start()
     print(f"We have logged in as {bot.user}")
-
-@bot.command(aliases=["u"])
-async def user(ctx,member:discord.Member=None):
-    """Displays user stats in the guild"""
-    user = member or ctx.author
-    embedVar = Embed(title=f"User stats for {user}",color=color_lamuse)
-    embedVar.set_thumbnail(url=user.display_avatar)
-    user_post = og_collection.find_one({"_id":user.id})
-    if user_post:
-        correct = user_post['correct']
-        if 'wrong' in user_post:
-            wrong = user_post['wrong']
-        else:
-            wrong = 0
-        total = correct + wrong
-        if total == 0:
-            rate = 0
-        else:
-            rate = round(float(correct/total)*100,3)
-        current_saves = user_post["current_saves"]
-        if current_saves == int(current_saves):
-            current_saves = int(current_saves)
-        else:
-            current_saves = round(current_saves,2)
-        msg = f"Rate: {rate}%"
-        msg += f"\nCorrect: {correct}"
-        msg += f"\nWrong: {wrong}"
-        msg += f"\nSaves: {current_saves}/{user_post['total_saves']}"
-        msg += f"\n\nCurrent Streak: {user_post['streak']}"
-        msg += f"\nHighest Streak: {user_post['high']}"
-        embedVar.add_field(name=mode_list["1"],value=msg)
-    user_post = classic_collection.find_one({"_id":user.id})
-    if user_post:
-        correct = user_post['correct']
-        if 'wrong' in user_post:
-            wrong = user_post['wrong']
-        else:
-            wrong = 0
-        total = correct + wrong
-        if total == 0:
-            rate = 0
-        else:
-            rate = correct/total*100
-            str_rate = str(rate)[:5]
-        msg = f"Rate: {str_rate}%"
-        msg += f"\nCorrect: {correct}"
-        msg += f"\nWrong: {wrong}"
-        msg += f"\n\n\nCurrent Streak: {user_post['streak']}"
-        msg += f"\nHighest Streak: {user_post['high']}"
-        embedVar.add_field(name=mode_list["2"],value=msg)
-    # user_post = abc_collection.find_one({"_id":user.id})
-    # if user_post:
-    #     correct = user_post['correct']
-    #     if 'wrong' in user_post:
-    #         wrong = user_post['wrong']
-    #     else:
-    #         wrong = 0
-    #     total = correct + wrong
-    #     if total == 0:
-    #         rate = 0
-    #     else:
-    #         rate = round(float(correct/total)*100,2)
-    #     current_saves = user_post['current_saves']
-    #     if current_saves == int(current_saves):
-    #         current_saves = int(current_saves)
-    #     else:
-    #         current_saves = round(current_saves,2)
-    #     msg = f"Rate: {rate}%"
-    #     msg += f"\nCorrect: {correct}"
-    #     msg += f"\nWrong: {wrong}"
-    #     msg += f"\nSaves: {current_saves}/{user_post['total_saves']}"
-    #     msg += f"\n\nCurrent Streak: {user_post['streak']}"
-    #     msg += f"\nHighest Streak: {user_post['high']}"
-    #     embedVar.add_field(name=mode_list["3"],value=msg)
-    user_post = beta_collection.find_one({"_id":user.id})
-    if user_post:
-        correct = user_post['correct']
-        if 'wrong' in user_post:
-            wrong = user_post['wrong']
-        else:
-            wrong = 0
-        total = correct + wrong
-        if total == 0:
-            rate = 0
-        else:
-            rate = round(float(correct/total)*100,2)
-        current_saves = user_post['current_saves']
-        if current_saves == int(current_saves):
-            current_saves = int(current_saves)
-        else:
-            current_saves = round(current_saves,2)
-        msg = f"Rate: {rate}%"
-        msg += f"\nCorrect: {correct}"
-        msg += f"\nWrong: {wrong}"
-        msg += f"\nSaves: {current_saves}/{user_post['total_saves']}"
-        embedVar.add_field(name=mode_list["4"],value=msg)
-    user_post = numselli_collection.find_one({"_id":user.id})
-    if user_post:
-        correct = user_post['correct']
-        if 'wrong' in user_post:
-            wrong = user_post['wrong']
-        else:
-            wrong = 0
-        total = correct + wrong
-        if total == 0:
-            rate = 0
-        else:
-            rate = round(float(correct/total)*100,2)
-        current_saves = user_post['current_saves']
-        if current_saves == int(current_saves):
-            current_saves = int(current_saves)
-        else:
-            current_saves = round(current_saves,2)
-        msg = f"Rate: {rate}%"
-        msg += f"\nCorrect: {correct}"
-        msg += f"\nWrong: {wrong}"
-        msg += f"\nSaves: {current_saves}/{user_post['total_saves']}"
-        embedVar.add_field(name=mode_list["5"],value=msg)
-    await ctx.send(embed=embedVar)
-
-@bot.command()
-@admin_perms()
-async def lock(ctx,bot_no:int,reason:typing.Literal['cooldown','offline']):
-    """Locks the channel manually. You need to have necessary permissions"""
-    if bot_no == 1:
-        channel = bot.get_channel(og_channel)
-        role = ctx.guild.get_role(og_save_id)
-        bot_name = "og"
-    elif bot_no == 2:
-        channel = bot.get_channel(classic_channel)
-        role = ctx.guild.get_role(countaholic_id)
-        bot_name = "classic"
-    elif bot_no == 3:
-        channel = bot.get_channel(abc_channel)
-        role = ctx.guild.get_role(abc_save_id)
-        bot_name = "abc"
-    else:
-        return
-    overwrites = channel.overwrites_for(role)
-    if reason == 'cooldown':
-        overwrites.update(send_messages=False)
-        await channel.set_permissions(role,overwrite=overwrites)
-        await channel.send("Channel locked for cooldown for 10 minutes")
-        misc.update_one(
-            {
-                "_id":"override"
-            }, {
-                "$set":
-                {
-                    f"{bot_name}":True
-                }
-            }
-        )
-        await asyncio.sleep(610)
-        overwrites.update(send_messages=True)
-        await channel.set_permissions(role,overwrite=overwrites)
-        await channel.send("Channel unlocked as cooldown is over")
-        misc.update_one(
-            {
-                "_id":"override"
-            }, {
-                "$set":
-                {
-                    f"{bot_name}":False
-                }
-            }
-        )
-    elif reason == 'offline':
-        overwrites.update(send_messages=False)
-        await channel.set_permissions(role,overwrite=overwrites)
-        await channel.send("Channel locked by moderator")
-        misc.update_one(
-            {
-                "_id":"override"
-            }, {
-                "$set":
-                {
-                    f"{bot_name}":True
-                }
-            }
-        )
 
 @bot.slash_command(guild_ids=servers)
 @admin_perms()
@@ -403,43 +223,6 @@ async def lock(ctx,
             }
         )
 
-@bot.command()
-@admin_perms()
-async def unlock(ctx,bot_no:int):
-    """Unlocks the channels manually. You need to have necessary permissions"""
-    if bot_no == 1:
-        channel = bot.get_channel(og_channel)
-        role = ctx.guild.get_role(og_save_id)
-        bot_name = "og"
-    elif bot_no == 2:
-        channel = bot.get_channel(classic_channel)
-        role = ctx.guild.get_role(countaholic_id)
-        bot_name = "classic"
-    elif bot_no == 3:
-        channel = bot.get_channel(abc_channel)
-        role = ctx.guild.get_role(abc_save_id)
-        bot_name = "abc"
-    else:
-        return
-    overwrites = channel.overwrites_for(role)
-    overwrites.update(send_messages=True)
-    await channel.set_permissions(role,overwrite=overwrites)
-    if ctx.channel == channel:
-        await ctx.respond("Channel unlocked by moderator")
-    else:
-        await channel.send("Channel unlocked by moderator")
-        await ctx.respond("Done")
-    misc.update_one(
-        {
-            "_id":"override"
-        }, {
-            "$set":
-            {
-                f"{bot_name}":False
-            }
-        }
-    )
-
 @bot.slash_command(guild_ids=servers)
 @admin_perms()
 async def unlock(ctx,
@@ -490,139 +273,6 @@ async def unlock(ctx,
             }
         }
     )
-
-# @bot.command()
-# async def alist(ctx):
-#     """Gives the list of counters who can receive abc gifts"""
-#     saves_list = abc_collection.aggregate([
-#         {
-#             '$match':{'counter':True}
-#         },
-#         {
-#             '$project':
-#             {
-#                 '_id':0,
-#                 'name':1,
-#                 'save_slot':{'$subtract': ['$total_saves','$current_saves']}
-#             }
-#         },
-#         {
-#             '$sort': {'save_slot':-1}
-#         }
-#     ])
-#     msg = ""
-#     for counter in saves_list:
-#         if int(counter['save_slot']) > 0:
-#             msg += f"{counter['name']} - {counter['save_slot']}\n"
-#     title_msg = "ABC counters who could use a save"
-#     embedVar = Embed(title=title_msg,description=msg,color=color_lamuse)
-#     await ctx.send(embed=embedVar)
-
-@bot.command()
-async def blist(ctx):
-    """Gives the list of counters who can receive AlphaBeta gifts"""
-    saves_list = beta_collection.aggregate([
-        {
-            '$match':{'counter':True}
-        },
-        {
-            '$project':
-            {
-                '_id':0,
-                'name':1,
-                'save_slot':{'$subtract': ['$total_saves','$current_saves']}
-            }
-        },
-        {
-            '$sort': {'save_slot':-1}
-        }
-    ])
-    msg = ""
-    for counter in saves_list:
-        if int(counter['save_slot']) > 0:
-            msg += f"{counter['name']} - {counter['save_slot']}\n"
-    title_msg = "AlphaBeta counters who could use a save"
-    embedVar = Embed(title=title_msg,description=msg,color=color_lamuse)
-    await ctx.send(embed=embedVar)
-
-@bot.command()
-async def oglist(ctx):
-    """Gives a list of users who want to receive saves for og counting"""
-    saves_list = og_collection.aggregate([
-        {
-            '$match':{'counter':True}
-        },
-        {
-            '$project':
-            {
-                '_id':0,
-                'name':1,
-                'save_slot':{'$subtract':['$total_saves','$current_saves']}
-            }
-        },
-        {
-            '$sort':{'save_slot':-1}
-        }
-    ])
-    msg = ""
-    for counter in saves_list:
-        if int(counter['save_slot']) > 0:
-            msg += f"{counter['name']} - {counter['save_slot']}\n"
-    title_msg = "Counters who could use a save in og-counting"
-    embedVar = Embed(title=title_msg,description=msg,color=color_lamuse)
-    await ctx.send(embed=embedVar)
-
-@bot.command()
-async def checklist(ctx,type_check:typing.Literal['og','b','vote']): #'a'
-    """Displays the list of people registered to receive saves"""
-    msg = ""
-    if type_check == 'og':
-        counter_list = og_collection.aggregate([
-            {
-                '$match':{'counter':True}
-            },
-            {
-                '$project':{'name':1}
-            }
-        ])
-        for counter in counter_list:
-            msg += f"{counter['name']}\n"
-        title_msg = "List of og counters registered by the bot"
-    # elif type_check == "a":
-    #     counter_list = abc_collection.aggregate([
-    #         {
-    #             '$match':{'counter':True}
-    #         },
-    #         {
-    #             '$project':{'name':1}
-    #         }
-    #     ])
-    #     for counter in counter_list:
-    #         msg += f"{counter['name']}\n"
-    #     title_msg = "List of ABC counters registered by the bot"
-    elif type_check == "b":
-        counter_list = beta_collection.aggregate([
-            {
-                '$match':{'counter':True}
-            },
-            {
-                '$project':{'name':1}
-            }
-        ])
-        for counter in counter_list:
-            msg += f"{counter['name']}\n"
-        title_msg = "List of AlphaBeta counters registered by the bot"
-    elif type_check == "vote":
-        counter_list = misc.find_one({"_id":"ogregister"},{"_id":0})
-        for user_id in counter_list:
-            if counter_list[f"{user_id}"] == True:
-                user = ctx.guild.get_member(int(user_id))
-                msg += f"{user}\n"
-        title_msg = "Counters who opted in for vote reminders"
-    else:
-        return
-    embedVar = Embed(title=title_msg,description=msg,color=color_lamuse)
-    await ctx.send(embed=embedVar)
 
 @bot.slash_command(guild_ids=servers)
 async def checklist(ctx,
@@ -678,236 +328,6 @@ async def checklist(ctx,
         return
     embedVar = Embed(title=title_msg,description=msg,color=color_lamuse)
     await ctx.respond(embed=embedVar)
-
-# @bot.command()
-# async def alphacounter(ctx):
-#     """Registers a counter as abc counters who want gifts"""
-#     user = ctx.author
-#     alphacounter_role = ctx.guild.get_role(alphacounter_id)
-#     if abc_collection.find_one({"_id":user.id}):
-#         user_post = abc_collection.find_one({"_id":user.id}, {"counter":1})
-#         if 'counter' not in user_post or user_post['counter'] == False:
-#             abc_collection.update_one(
-#                 {
-#                     "_id":user.id
-#                 }, {
-#                     "$set":
-#                     {
-#                         "counter":True
-#                     }
-#                 }
-#             )
-#             await user.add_roles(alphacounter_role)
-#             msg = f"<@{user.id}> is an ABC counter. "
-#             msg += "Your name will appear in `alist`."
-#             await ctx.send(msg)
-#         elif user_post['counter'] == True:
-#             abc_collection.update_one(
-#                 {
-#                     "_id":user.id
-#                 }, {
-#                     "$set":
-#                     {
-#                         "counter":False
-#                     }
-#                 }
-#             )
-#             await user.remove_roles(alphacounter_role)
-#             msg = f"<@{user.id}> is no longer an ABC counter. "
-#             msg += "Your name will not appear in `alist`."
-#             await ctx.send(msg)
-#     else:
-#         abc_collection.insert_one(
-#             {
-#                 "_id":user.id,
-#                 "name":f"{user}",
-#                 "correct":0,
-#                 "wrong":0,
-#                 "current_saves":0,
-#                 "total_saves":5,
-#                 "streak":0,
-#                 "high":0,
-#                 "counter":True
-#             }
-#         )
-#         await user.add_roles(alphacounter_role)
-#         msg = f"<@{user.id}> is an ABC counter. "
-#         msg += "Your name will appear in `alist`."
-
-@bot.command()
-async def betacounter(ctx):
-    """Registers a counter as AlphaBeta counters"""
-    user = ctx.author
-    betacounter_role = ctx.guild.get_role(betacounter_id)
-    if beta_collection.find_one({"_id":user.id}):
-        user_post = beta_collection.find_one({"_id":user.id}, {"counter":1})
-        if 'counter' not in user_post or user_post['counter'] == False:
-            beta_collection.update_one(
-                {
-                    "_id":user.id
-                }, {
-                    "$set":
-                    {
-                        "counter":True
-                    }
-                }
-            )
-            await user.add_roles(betacounter_role)
-            msg = f"<@{user.id}> is an AlphaBeta counter. "
-            msg += "Your name will appear in `blist`"
-            await ctx.send(msg)
-        elif user_post['counter'] == True:
-            beta_collection.update_one(
-                {
-                    "_id":user.id
-                }, {
-                    "$set":
-                    {
-                        "counter":False
-                    }
-                }
-            )
-            await user.remove_roles(betacounter_role)
-            msg = f"<@{user.id}> is no longer an AlphaBeta counter. "
-            msg += "Your name will not appear in `blist`"
-            await ctx.send(msg)
-    else:
-        beta_collection.insert_one(
-            {
-                "_id":user.id,
-                "name":f"{user}",
-                "correct":0,
-                "wrong":0,
-                "current_saves":0,
-                "total_saves":5,
-                "streak":0,
-                "high":0,
-                "counter":True
-            }
-        )
-        await user.add_roles(betacounter_role)
-        msg = f"<@{user.id}> is an AlphaBeta counter. "
-        msg += "Your name will appear in `blist`."
-
-@bot.command()
-async def ogcounter(ctx):
-    """
-    Registers a counter as og-counters to receive 
-    saves from users who have extra saves
-    """
-    user = ctx.author
-    user_post = og_collection.find_one({"_id":user.id}, {"counter":1})
-    if user_post:
-        if 'counter' not in user_post or user_post['counter'] == False:
-            og_collection.update_one(
-                {
-                    "_id":user.id
-                }, {
-                    "$set":
-                    {
-                        "counter":True
-                    }
-                }
-            )
-            msg = f"<@{user.id}> is an og-counter. "
-            msg += "Your name will appear in `oglist`"
-            await ctx.send(msg)
-        elif user_post['counter'] == True:
-            og_collection.update_one(
-                {
-                    "_id":user.id
-                }, {
-                    "$set":
-                    {
-                        "counter":False
-                    }
-                }
-            )
-            msg = f"<@{user.id}> is no longer an og-counter. "
-            msg += "Your name will not appear in `oglist`"
-            await ctx.send(msg)
-    else:
-        og_collection.insert_one(
-            {
-                "_id":user.id,
-                "name":f"{user}",
-                "correct":0,
-                "wrong":0,
-                "current_saves":0,
-                "total_saves":5,
-                "streak":0,
-                "high":0,
-                "counter":True
-            }
-        )
-        msg = f"<@{user.id}> is and og-counter. "
-        msg += "Your name will appear in `oglist`."
-
-@bot.command()
-async def ogregister(ctx):
-    """Register for c!vote reminders"""
-    register_list = misc.find_one({"_id":"ogregister"})
-    userID = ctx.author.id
-    if f"{userID}" not in register_list or register_list[f"{userID}"] == False:
-        misc.update_one(
-            {
-                "_id":"ogregister"
-            }, {
-                "$set":
-                {
-                    f"{userID}":True
-                }
-            }
-        )
-        msg = f"<@{userID}> is now registered for getting reminders for voting"
-        await ctx.send(msg)
-    else:
-        misc.update_one(
-            {
-                "_id":"ogregister"
-            }, {
-                "$set":
-                {
-                    f"{userID}":False
-                }
-            }
-        )
-        msg = f"<@{userID}> will not get reminders for voting"
-        await ctx.send(msg)
-
-@bot.command(aliases=["lb"])
-async def leaderboard(ctx,mode:int=1,page:int=1):
-    """Shows the streak highscores"""
-    i=(page-1)*10
-    msg = ""
-    if mode == 1:
-        counter_cursor = og_collection.find(
-            {},
-            {'name':1,'high':1,'_id':0}
-        ).sort("high",-1).skip(i).limit(10)
-        title_msg = "Highest streaks for og counting"
-    elif mode == 2:
-        counter_cursor = classic_collection.find(
-            {},
-            {'name':1,'high':1,'_id':0}
-        ).sort("high",-1).skip(i).limit(10)
-        title_msg = "Highest streaks for classic counting"
-    # elif mode == 3:
-    #     counter_cursor = abc_collection.find(
-    #         {},
-    #         {'name':1,'high':1,'_id':0}
-    #     ).sort("high",-1).skip(i).limit(10)
-    #     title_msg = "Highest streaks for abc counting"
-    else:
-        return
-    for counter in counter_cursor:
-        i+=1
-        msg += f"{i}. {counter['name']} - {counter['high']}\n"
-    if msg!="":
-        embedVar = Embed(title=title_msg,description=msg,color=color_lamuse)
-        await ctx.send(embed=embedVar)
-    else:
-        return
 
 @bot.slash_command(guild_ids=servers)
 async def leaderboard(ctx,
@@ -987,40 +407,6 @@ async def leaderboard(ctx,
     embedVar.set_footer(text=f"Page: {page}")
     await ctx.respond(embed=embedVar)
 
-@bot.command(aliases=["cs"])
-async def currentscore(ctx,mode:int=1,page:int=1):
-    """Shows the streak currentscores"""
-    i=(page-1)*10
-    msg = ""
-    if mode == 1:
-        counter_cursor = og_collection.find(
-            {},
-            {'name':1,'streak':1,'_id':0}
-        ).sort("streak",-1).skip(i).limit(10)
-        title_msg = "Current streaks for og counting"
-    elif mode == 2:
-        counter_cursor = classic_collection.find(
-            {},
-            {'name':1,'streak':1,'_id':0}
-        ).sort("streak",-1).skip(i).limit(10)
-        title_msg = "Current streaks for classic counting"
-    # elif mode == 3:
-    #     counter_cursor = abc_collection.find(
-    #         {},
-    #         {'name':1,'streak':1,'_id':0}
-    #     ).sort("streak",-1).skip(i).limit(10)
-    #     title_msg = "Current streaks for abc counting"
-    else:
-        return
-    for counter in counter_cursor:
-        i+=1
-        msg += f"{i}. {counter['name']} - {counter['streak']}\n"
-    if msg!="":
-        embedVar = Embed(title=title_msg,description=msg,color=color_lamuse)
-        await ctx.send(embed=embedVar)
-    else:
-        return
-
 @bot.slash_command(guild_ids=servers)
 async def currentscores(ctx,
         mode:Option(str,
@@ -1099,109 +485,10 @@ async def currentscores(ctx,
     embedVar.set_footer(text=f"Page: {page}")
     await ctx.respond(embed=embedVar)
 
-@bot.command(aliases=["ru"])
-async def rankup(ctx,member:discord.Member=None):
-    """Shows the number of counts required to increase stats"""
-    user = member or ctx.author
-    msg = ""
-    
-    user_post = og_collection.find_one(
-        {"_id":user.id},
-        {"correct":1,"wrong":1}
-    )
-    if user_post:
-        correct = user_post['correct']
-        wrong = user_post['wrong']
-        total = correct + wrong
-        rate = round(float(correct/total),5)
-        if rate >= 0.9998:
-            msg += "`counting`: The bot can't calculate the number of counts "
-            msg += "you need to rank up\n"
-        else:
-            new_rate = rate + 0.000005
-            x = math.ceil((new_rate * total - correct)/(1 - new_rate))
-            new_cor = correct + x
-            new_rate = str(round((rate + 0.00001)*100,3))[:6]
-            msg += f"`counting`: Rank up to {new_rate}% at **{new_cor}**. "
-            msg += f"You need ~**{x}** more numbers.\n"
-    user_post = classic_collection.find_one(
-        {"_id":user.id},
-        {"correct":1,"wrong":1}
-    )
-    if user_post:
-        correct = user_post['correct']
-        wrong = user_post['wrong']
-        total = correct + wrong
-        rate = correct/total
-        str_rate = str(rate)[:6]
-        rate = float(str_rate)
-        if rate >= 0.9998:
-            msg += "`classic`: The bot can't calculate the number of counts "
-            msg += "you need to rank up\n"
-        else:
-            new_rate = rate + 0.0001
-            x = math.ceil((new_rate * total - correct)/(1 - new_rate))
-            new_cor = correct + x
-            new_rate = str(round(new_rate*100,2))[:5]
-            msg += f"`classic`: Rank up to {new_rate}% at **{new_cor}**. "
-            msg += f"You need ~**{x}** more numbers.\n"
-    # user_post = abc_collection.find_one(
-    #     {"_id":user.id},
-    #     {"correct":1,"wrong":1}
-    # )
-    # if user_post:
-    #     correct = user_post['correct']
-    #     wrong = user_post['wrong']
-    #     total = correct + wrong
-    #     rate = round(float(correct/total),4)
-    #     if rate >= 0.9998:
-    #         msg += "`abc`: The bot can't calculate the number of counts "
-    #         msg += "you need to rank up\n"
-    #     else:
-    #         new_rate = rate + 0.00005
-    #         x = math.ceil((new_rate * total - correct)/(1 - new_rate))
-    #         new_cor = correct + x
-    #         new_rate = str(round((rate + 0.0001)*100,2))[:5]
-    #         msg += f"`abc`: Rank up to {new_rate}% at **{new_cor}**. "
-    #         msg += f"You need ~**{x}** more numbers.\n"
-    user_post = beta_collection.find_one(
-        {"_id":user.id},
-        {"correct":1,"wrong":1}
-    )
-    if user_post:
-        correct = user_post['correct']
-        wrong = user_post['wrong']
-        total = correct + wrong
-        rate = round(float(correct/total),4)
-        if rate >= 0.9998:
-            msg += "`alphabeta`: The bot can't calculate the number of counts "
-            msg += "you need to rank up\n"
-        else:
-            new_rate = rate + 0.00005
-            x = math.ceil((new_rate * total - correct)/(1 - new_rate))
-            new_cor = correct + x
-            new_rate = str(round((rate + 0.0001)*100,2))[:5]
-            msg += f"`alphabeta`: Rank up to {new_rate}% at **{new_cor}**. "
-            msg += f"You need ~**{x}** more numbers.\n"
-    title_msg = f"Rank up stats for {user}"
-    embedVar = Embed(title=title_msg,description=msg,color=color_lamuse)
-    await ctx.send(embed=embedVar)
-
 @bot.slash_command(guild_ids=servers)
 async def id(ctx,user:discord.Member):
     """Gives a user's id without pinging them"""
     await ctx.respond(f"{user.id}")
-
-@bot.command()
-async def run(ctx):
-    """Gives the time when the run started"""
-    run_time = time_collection.find_one({"_id":"run"})
-    time_diff = run_time["time_start"] - epoch_time
-    total_seconds = int(time_diff.total_seconds())
-    if total_seconds == 0:
-        await ctx.send("It's been a while since a run")
-    else:
-        await ctx.send(f"Run started at <t:{total_seconds}:T>")
 
 @bot.slash_command(guild_ids=servers)
 async def run(ctx):
@@ -1213,21 +500,6 @@ async def run(ctx):
         await ctx.respond("It's been a while since a run")
     else:
         await ctx.respond(f"Run started at <t:{total_seconds}:T>")
-
-@bot.command()
-async def reminders(ctx):
-    """Shows the list of reminders the bot has for a user"""
-    rem_list = time_collection.find({"user":ctx.author.id})
-    msg = ""
-    time_now = datetime.utcnow().replace(microsecond=0)
-    for item in rem_list:
-        time_diff = item['time'] - time_now
-        time_diff = int(time_diff.total_seconds())
-        if time_diff > 0:
-            total_seconds = int((item['time'] - epoch_time).total_seconds())
-            msg += f"{item['command']} - <t:{total_seconds}:R>\n"
-    embedVar = Embed(title=f"Reminders for {ctx.author}",description=msg,color=color_lamuse)
-    await ctx.send(embed=embedVar)
 
 @bot.slash_command(guild_ids=servers)
 async def reminders(ctx):
@@ -1243,6 +515,781 @@ async def reminders(ctx):
             msg += f"{item['command']} - <t:{total_seconds}:R>\n"
     embedVar = Embed(title=f"Reminders for {ctx.author}",description=msg,color=color_lamuse)
     await ctx.respond(embed=embedVar)
+
+class AdminCommands(commands.Cog, name="Admin Commands"):
+    def __init__(self, bot):
+        self.bot = bot
+
+    @commands.command()
+    @admin_perms()
+    async def lock(self,ctx,
+            bot_name:typing.Literal['og','classic','abc'],
+            reason:typing.Literal['cooldown','offline']):
+        """Locks the channel manually. You need to have necessary permissions"""
+        if bot_name == "og":
+            channel = bot.get_channel(og_channel)
+            role = ctx.guild.get_role(og_save_id)
+        elif bot_name == "classic":
+            channel = bot.get_channel(classic_channel)
+            role = ctx.guild.get_role(countaholic_id)
+        elif bot_name == "abc":
+            channel = bot.get_channel(abc_channel)
+            role = ctx.guild.get_role(abc_save_id)
+        else:
+            return
+        overwrites = channel.overwrites_for(role)
+        if reason == 'cooldown':
+            overwrites.update(send_messages=False)
+            await channel.set_permissions(role,overwrite=overwrites)
+            await channel.send("Channel locked for cooldown for 10 minutes")
+            misc.update_one(
+                {
+                    "_id":"override"
+                }, {
+                    "$set":
+                    {
+                        f"{bot_name}":True
+                    }
+                }
+            )
+            await asyncio.sleep(610)
+            overwrites.update(send_messages=True)
+            await channel.set_permissions(role,overwrite=overwrites)
+            await channel.send("Channel unlocked as cooldown is over")
+            misc.update_one(
+                {
+                    "_id":"override"
+                }, {
+                    "$set":
+                    {
+                        f"{bot_name}":False
+                    }
+                }
+            )
+        elif reason == 'offline':
+            overwrites.update(send_messages=False)
+            await channel.set_permissions(role,overwrite=overwrites)
+            await channel.send("Channel locked by moderator")
+            misc.update_one(
+                {
+                    "_id":"override"
+                }, {
+                    "$set":
+                    {
+                        f"{bot_name}":True
+                    }
+                }
+            )
+
+    @commands.command()
+    @admin_perms()
+    async def unlock(self,ctx,
+            bot_name:typing.Literal['og','classic','abc']):
+        """Unlocks the channels manually. You need to have necessary permissions"""
+        if bot_name == "og":
+            channel = bot.get_channel(og_channel)
+            role = ctx.guild.get_role(og_save_id)
+        elif bot_name == "classic":
+            channel = bot.get_channel(classic_channel)
+            role = ctx.guild.get_role(countaholic_id)
+        elif bot_name == "abc":
+            channel = bot.get_channel(abc_channel)
+            role = ctx.guild.get_role(abc_save_id)
+        else:
+            return
+        overwrites = channel.overwrites_for(role)
+        overwrites.update(send_messages=True)
+        await channel.set_permissions(role,overwrite=overwrites)
+        if ctx.channel == channel:
+            await ctx.respond("Channel unlocked by moderator")
+        else:
+            await channel.send("Channel unlocked by moderator")
+            await ctx.respond("Done")
+        misc.update_one(
+            {
+                "_id":"override"
+            }, {
+                "$set":
+                {
+                    f"{bot_name}":False
+                }
+            }
+        )
+
+class List(commands.Cog):
+    def __init__(self, bot):
+        self.bot = bot
+
+    @commands.command(aliases=['ol'])
+    async def oglist(self, ctx):
+        """Gives a list of users who want to receive saves for og counting"""
+        saves_list = og_collection.aggregate([
+            {
+                '$match':{'counter':True}
+            },
+            {
+                '$project':
+                {
+                    '_id':0,
+                    'name':1,
+                    'save_slot':{'$subtract':['$total_saves','$current_saves']}
+                }
+            },
+            {
+                '$sort':{'save_slot':-1}
+            }
+        ])
+        msg = ""
+        for counter in saves_list:
+            if int(counter['save_slot']) > 0:
+                msg += f"{counter['name']} - {counter['save_slot']}\n"
+        title_msg = "Counters who could use a save in og-counting"
+        embedVar = Embed(title=title_msg,description=msg,color=color_lamuse)
+        await ctx.send(embed=embedVar)
+    
+    @commands.command(aliases=['ocounter','oc'])
+    async def ogcounter(self, ctx):
+        """
+        Registers a counter as og-counters to receive 
+        saves from users who have extra saves
+        """
+        user = ctx.author
+        user_post = og_collection.find_one({"_id":user.id}, {"counter":1})
+        if user_post:
+            if 'counter' not in user_post or user_post['counter'] == False:
+                og_collection.update_one(
+                    {
+                        "_id":user.id
+                    }, {
+                        "$set":
+                        {
+                            "counter":True
+                        }
+                    }
+                )
+                msg = f"<@{user.id}> is an og-counter. "
+                msg += "Your name will appear in `oglist`"
+                await ctx.send(msg)
+            elif user_post['counter'] == True:
+                og_collection.update_one(
+                    {
+                        "_id":user.id
+                    }, {
+                        "$set":
+                        {
+                            "counter":False
+                        }
+                    }
+                )
+                msg = f"<@{user.id}> is no longer an og-counter. "
+                msg += "Your name will not appear in `oglist`"
+                await ctx.send(msg)
+        else:
+            og_collection.insert_one(
+                {
+                    "_id":user.id,
+                    "name":f"{user}",
+                    "correct":0,
+                    "wrong":0,
+                    "current_saves":0,
+                    "total_saves":5,
+                    "streak":0,
+                    "high":0,
+                    "counter":True
+                }
+            )
+            msg = f"<@{user.id}> is and og-counter. "
+            msg += "Your name will appear in `oglist`."
+
+    # @commands.command()
+    # async def alphacounter(self,ctx):
+    #     """Registers a counter as abc counters who want gifts"""
+    #     user = ctx.author
+    #     alphacounter_role = ctx.guild.get_role(alphacounter_id)
+    #     if abc_collection.find_one({"_id":user.id}):
+    #         user_post = abc_collection.find_one({"_id":user.id}, {"counter":1})
+    #         if 'counter' not in user_post or user_post['counter'] == False:
+    #             abc_collection.update_one(
+    #                 {
+    #                     "_id":user.id
+    #                 }, {
+    #                     "$set":
+    #                     {
+    #                         "counter":True
+    #                     }
+    #                 }
+    #             )
+    #             await user.add_roles(alphacounter_role)
+    #             msg = f"<@{user.id}> is an ABC counter. "
+    #             msg += "Your name will appear in `alist`."
+    #             await ctx.send(msg)
+    #         elif user_post['counter'] == True:
+    #             abc_collection.update_one(
+    #                 {
+    #                     "_id":user.id
+    #                 }, {
+    #                     "$set":
+    #                     {
+    #                         "counter":False
+    #                     }
+    #                 }
+    #             )
+    #             await user.remove_roles(alphacounter_role)
+    #             msg = f"<@{user.id}> is no longer an ABC counter. "
+    #             msg += "Your name will not appear in `alist`."
+    #             await ctx.send(msg)
+    #     else:
+    #         abc_collection.insert_one(
+    #             {
+    #                 "_id":user.id,
+    #                 "name":f"{user}",
+    #                 "correct":0,
+    #                 "wrong":0,
+    #                 "current_saves":0,
+    #                 "total_saves":5,
+    #                 "streak":0,
+    #                 "high":0,
+    #                 "counter":True
+    #             }
+    #         )
+    #         await user.add_roles(alphacounter_role)
+    #         msg = f"<@{user.id}> is an ABC counter. "
+    #         msg += "Your name will appear in `alist`."
+
+    # @commands.command()
+    # async def alist(self,ctx):
+    #     """Gives the list of counters who can receive abc gifts"""
+    #     saves_list = abc_collection.aggregate([
+    #         {
+    #             '$match':{'counter':True}
+    #         },
+    #         {
+    #             '$project':
+    #             {
+    #                 '_id':0,
+    #                 'name':1,
+    #                 'save_slot':{'$subtract': ['$total_saves','$current_saves']}
+    #             }
+    #         },
+    #         {
+    #             '$sort': {'save_slot':-1}
+    #         }
+    #     ])
+    #     msg = ""
+    #     for counter in saves_list:
+    #         if int(counter['save_slot']) > 0:
+    #             msg += f"{counter['name']} - {counter['save_slot']}\n"
+    #     title_msg = "ABC counters who could use a save"
+    #     embedVar = Embed(title=title_msg,description=msg,color=color_lamuse)
+    #     await ctx.send(embed=embedVar)
+
+    @commands.command(aliases=['bl'])
+    async def blist(self, ctx):
+        """Gives the list of counters who can receive AlphaBeta gifts"""
+        saves_list = beta_collection.aggregate([
+            {
+                '$match':{'counter':True}
+            },
+            {
+                '$project':
+                {
+                    '_id':0,
+                    'name':1,
+                    'save_slot':{'$subtract': ['$total_saves','$current_saves']}
+                }
+            },
+            {
+                '$sort': {'save_slot':-1}
+            }
+        ])
+        msg = ""
+        for counter in saves_list:
+            if int(counter['save_slot']) > 0:
+                msg += f"{counter['name']} - {counter['save_slot']}\n"
+        title_msg = "AlphaBeta counters who could use a save"
+        embedVar = Embed(title=title_msg,description=msg,color=color_lamuse)
+        await ctx.send(embed=embedVar)
+
+    @commands.command(aliases=['bcounter','bc'])
+    async def betacounter(self, ctx):
+        """Registers a counter as AlphaBeta counters"""
+        user = ctx.author
+        betacounter_role = ctx.guild.get_role(betacounter_id)
+        if beta_collection.find_one({"_id":user.id}):
+            user_post = beta_collection.find_one({"_id":user.id}, {"counter":1})
+            if 'counter' not in user_post or user_post['counter'] == False:
+                beta_collection.update_one(
+                    {
+                        "_id":user.id
+                    }, {
+                        "$set":
+                        {
+                            "counter":True
+                        }
+                    }
+                )
+                await user.add_roles(betacounter_role)
+                msg = f"<@{user.id}> is an AlphaBeta counter. "
+                msg += "Your name will appear in `blist`"
+                await ctx.send(msg)
+            elif user_post['counter'] == True:
+                beta_collection.update_one(
+                    {
+                        "_id":user.id
+                    }, {
+                        "$set":
+                        {
+                            "counter":False
+                        }
+                    }
+                )
+                await user.remove_roles(betacounter_role)
+                msg = f"<@{user.id}> is no longer an AlphaBeta counter. "
+                msg += "Your name will not appear in `blist`"
+                await ctx.send(msg)
+        else:
+            beta_collection.insert_one(
+                {
+                    "_id":user.id,
+                    "name":f"{user}",
+                    "correct":0,
+                    "wrong":0,
+                    "current_saves":0,
+                    "total_saves":5,
+                    "streak":0,
+                    "high":0,
+                    "counter":True
+                }
+            )
+            await user.add_roles(betacounter_role)
+            msg = f"<@{user.id}> is an AlphaBeta counter. "
+            msg += "Your name will appear in `blist`."
+    
+    @commands.command()
+    async def checklist(self,ctx,type_check:typing.Literal['og','b','vote']): #'a'
+        """Displays the list of people registered to receive saves"""
+        msg = ""
+        if type_check == 'og':
+            counter_list = og_collection.aggregate([
+                {
+                    '$match':{'counter':True}
+                },
+                {
+                    '$project':{'name':1}
+                }
+            ])
+            for counter in counter_list:
+                msg += f"{counter['name']}\n"
+            title_msg = "List of og counters registered by the bot"
+        # elif type_check == "a":
+        #     counter_list = abc_collection.aggregate([
+        #         {
+        #             '$match':{'counter':True}
+        #         },
+        #         {
+        #             '$project':{'name':1}
+        #         }
+        #     ])
+        #     for counter in counter_list:
+        #         msg += f"{counter['name']}\n"
+        #     title_msg = "List of ABC counters registered by the bot"
+        elif type_check == "b":
+            counter_list = beta_collection.aggregate([
+                {
+                    '$match':{'counter':True}
+                },
+                {
+                    '$project':{'name':1}
+                }
+            ])
+            for counter in counter_list:
+                msg += f"{counter['name']}\n"
+            title_msg = "List of AlphaBeta counters registered by the bot"
+        elif type_check == "vote":
+            counter_list = misc.find_one({"_id":"ogregister"},{"_id":0})
+            for user_id in counter_list:
+                if counter_list[f"{user_id}"] == True:
+                    user = ctx.guild.get_member(int(user_id))
+                    msg += f"{user}\n"
+            title_msg = "Counters who opted in for vote reminders"
+        else:
+            return
+        embedVar = Embed(title=title_msg,description=msg,color=color_lamuse)
+        await ctx.send(embed=embedVar)
+
+class Stats(commands.Cog):
+    def __init__(self, bot):
+        self.bot = bot
+
+    @commands.command(aliases=['u'])
+    async def user(self,ctx,member:discord.Member=None):
+        """Displays user stats in the guild"""
+        user = member or ctx.author
+        embedVar = Embed(title=f"User stats for {user}",color=color_lamuse)
+        embedVar.set_thumbnail(url=user.display_avatar)
+        user_post = og_collection.find_one({"_id":user.id})
+        if user_post:
+            correct = user_post['correct']
+            if 'wrong' in user_post:
+                wrong = user_post['wrong']
+            else:
+                wrong = 0
+            total = correct + wrong
+            if total == 0:
+                rate = 0
+            else:
+                rate = round(float(correct/total)*100,3)
+            current_saves = user_post["current_saves"]
+            if current_saves == int(current_saves):
+                current_saves = int(current_saves)
+            else:
+                current_saves = round(current_saves,2)
+            msg = f"Rate: {rate}%"
+            msg += f"\nCorrect: {correct}"
+            msg += f"\nWrong: {wrong}"
+            msg += f"\nSaves: {current_saves}/{user_post['total_saves']}"
+            msg += f"\n\nCurrent Streak: {user_post['streak']}"
+            msg += f"\nHighest Streak: {user_post['high']}"
+            embedVar.add_field(name=mode_list["1"],value=msg)
+        user_post = classic_collection.find_one({"_id":user.id})
+        if user_post:
+            correct = user_post['correct']
+            if 'wrong' in user_post:
+                wrong = user_post['wrong']
+            else:
+                wrong = 0
+            total = correct + wrong
+            if total == 0:
+                rate = 0
+            else:
+                rate = correct/total*100
+                str_rate = str(rate)[:5]
+            msg = f"Rate: {str_rate}%"
+            msg += f"\nCorrect: {correct}"
+            msg += f"\nWrong: {wrong}"
+            msg += f"\n\n\nCurrent Streak: {user_post['streak']}"
+            msg += f"\nHighest Streak: {user_post['high']}"
+            embedVar.add_field(name=mode_list["2"],value=msg)
+        # user_post = abc_collection.find_one({"_id":user.id})
+        # if user_post:
+        #     correct = user_post['correct']
+        #     if 'wrong' in user_post:
+        #         wrong = user_post['wrong']
+        #     else:
+        #         wrong = 0
+        #     total = correct + wrong
+        #     if total == 0:
+        #         rate = 0
+        #     else:
+        #         rate = round(float(correct/total)*100,2)
+        #     current_saves = user_post['current_saves']
+        #     if current_saves == int(current_saves):
+        #         current_saves = int(current_saves)
+        #     else:
+        #         current_saves = round(current_saves,2)
+        #     msg = f"Rate: {rate}%"
+        #     msg += f"\nCorrect: {correct}"
+        #     msg += f"\nWrong: {wrong}"
+        #     msg += f"\nSaves: {current_saves}/{user_post['total_saves']}"
+        #     msg += f"\n\nCurrent Streak: {user_post['streak']}"
+        #     msg += f"\nHighest Streak: {user_post['high']}"
+        #     embedVar.add_field(name=mode_list["3"],value=msg)
+        user_post = beta_collection.find_one({"_id":user.id})
+        if user_post:
+            correct = user_post['correct']
+            if 'wrong' in user_post:
+                wrong = user_post['wrong']
+            else:
+                wrong = 0
+            total = correct + wrong
+            if total == 0:
+                rate = 0
+            else:
+                rate = round(float(correct/total)*100,2)
+            current_saves = user_post['current_saves']
+            if current_saves == int(current_saves):
+                current_saves = int(current_saves)
+            else:
+                current_saves = round(current_saves,2)
+            msg = f"Rate: {rate}%"
+            msg += f"\nCorrect: {correct}"
+            msg += f"\nWrong: {wrong}"
+            msg += f"\nSaves: {current_saves}/{user_post['total_saves']}"
+            embedVar.add_field(name=mode_list["4"],value=msg)
+        user_post = numselli_collection.find_one({"_id":user.id})
+        if user_post:
+            correct = user_post['correct']
+            if 'wrong' in user_post:
+                wrong = user_post['wrong']
+            else:
+                wrong = 0
+            total = correct + wrong
+            if total == 0:
+                rate = 0
+            else:
+                rate = round(float(correct/total)*100,2)
+            current_saves = user_post['current_saves']
+            if current_saves == int(current_saves):
+                current_saves = int(current_saves)
+            else:
+                current_saves = round(current_saves,2)
+            msg = f"Rate: {rate}%"
+            msg += f"\nCorrect: {correct}"
+            msg += f"\nWrong: {wrong}"
+            msg += f"\nSaves: {current_saves}/{user_post['total_saves']}"
+            embedVar.add_field(name=mode_list["5"],value=msg)
+        await ctx.send(embed=embedVar)
+    
+    @commands.command(aliases=["cs"])
+    async def currentscore(self,ctx,mode:int=1,page:int=1):
+        """Shows the streak currentscores"""
+        i=(page-1)*10
+        msg = ""
+        if mode == 1:
+            counter_cursor = og_collection.find(
+                {},
+                {'name':1,'streak':1,'_id':0}
+            ).sort("streak",-1).skip(i).limit(10)
+            title_msg = "Current streaks for og counting"
+        elif mode == 2:
+            counter_cursor = classic_collection.find(
+                {},
+                {'name':1,'streak':1,'_id':0}
+            ).sort("streak",-1).skip(i).limit(10)
+            title_msg = "Current streaks for classic counting"
+        # elif mode == 3:
+        #     counter_cursor = abc_collection.find(
+        #         {},
+        #         {'name':1,'streak':1,'_id':0}
+        #     ).sort("streak",-1).skip(i).limit(10)
+        #     title_msg = "Current streaks for abc counting"
+        else:
+            return
+        for counter in counter_cursor:
+            i+=1
+            msg += f"{i}. {counter['name']} - {counter['streak']}\n"
+        if msg!="":
+            embedVar = Embed(title=title_msg,description=msg,color=color_lamuse)
+            await ctx.send(embed=embedVar)
+        else:
+            return
+
+    @commands.command(aliases=["lb"])
+    async def leaderboard(self,ctx,mode:int=1,page:int=1):
+        """Shows the streak highscores"""
+        i=(page-1)*10
+        msg = ""
+        if mode == 1:
+            counter_cursor = og_collection.find(
+                {},
+                {'name':1,'high':1,'_id':0}
+            ).sort("high",-1).skip(i).limit(10)
+            title_msg = "Highest streaks for og counting"
+        elif mode == 2:
+            counter_cursor = classic_collection.find(
+                {},
+                {'name':1,'high':1,'_id':0}
+            ).sort("high",-1).skip(i).limit(10)
+            title_msg = "Highest streaks for classic counting"
+        # elif mode == 3:
+        #     counter_cursor = abc_collection.find(
+        #         {},
+        #         {'name':1,'high':1,'_id':0}
+        #     ).sort("high",-1).skip(i).limit(10)
+        #     title_msg = "Highest streaks for abc counting"
+        else:
+            return
+        for counter in counter_cursor:
+            i+=1
+            msg += f"{i}. {counter['name']} - {counter['high']}\n"
+        if msg!="":
+            embedVar = Embed(title=title_msg,description=msg,color=color_lamuse)
+            await ctx.send(embed=embedVar)
+        else:
+            return
+
+    @commands.command(aliases=["ru"])
+    async def rankup(self,ctx,member:discord.Member=None):
+        """Shows the number of counts required to increase stats"""
+        user = member or ctx.author
+        msg = ""
+        
+        user_post = og_collection.find_one(
+            {"_id":user.id},
+            {"correct":1,"wrong":1}
+        )
+        if user_post:
+            correct = user_post['correct']
+            wrong = user_post['wrong']
+            total = correct + wrong
+            rate = round(float(correct/total),5)
+            if rate >= 0.9998:
+                msg += "`counting`: The bot can't calculate the number of counts "
+                msg += "you need to rank up\n"
+            else:
+                new_rate = rate + 0.000005
+                x = math.ceil((new_rate * total - correct)/(1 - new_rate))
+                new_cor = correct + x
+                new_rate = str(round((rate + 0.00001)*100,3))[:6]
+                msg += f"`counting`: Rank up to {new_rate}% at **{new_cor}**. "
+                msg += f"You need ~**{x}** more numbers.\n"
+        user_post = classic_collection.find_one(
+            {"_id":user.id},
+            {"correct":1,"wrong":1}
+        )
+        if user_post:
+            correct = user_post['correct']
+            wrong = user_post['wrong']
+            total = correct + wrong
+            rate = correct/total
+            str_rate = str(rate)[:6]
+            rate = float(str_rate)
+            if rate >= 0.9998:
+                msg += "`classic`: The bot can't calculate the number of counts "
+                msg += "you need to rank up\n"
+            else:
+                new_rate = rate + 0.0001
+                x = math.ceil((new_rate * total - correct)/(1 - new_rate))
+                new_cor = correct + x
+                new_rate = str(round(new_rate*100,2))[:5]
+                msg += f"`classic`: Rank up to {new_rate}% at **{new_cor}**. "
+                msg += f"You need ~**{x}** more numbers.\n"
+        # user_post = abc_collection.find_one(
+        #     {"_id":user.id},
+        #     {"correct":1,"wrong":1}
+        # )
+        # if user_post:
+        #     correct = user_post['correct']
+        #     wrong = user_post['wrong']
+        #     total = correct + wrong
+        #     rate = round(float(correct/total),4)
+        #     if rate >= 0.9998:
+        #         msg += "`abc`: The bot can't calculate the number of counts "
+        #         msg += "you need to rank up\n"
+        #     else:
+        #         new_rate = rate + 0.00005
+        #         x = math.ceil((new_rate * total - correct)/(1 - new_rate))
+        #         new_cor = correct + x
+        #         new_rate = str(round((rate + 0.0001)*100,2))[:5]
+        #         msg += f"`abc`: Rank up to {new_rate}% at **{new_cor}**. "
+        #         msg += f"You need ~**{x}** more numbers.\n"
+        user_post = beta_collection.find_one(
+            {"_id":user.id},
+            {"correct":1,"wrong":1}
+        )
+        if user_post:
+            correct = user_post['correct']
+            wrong = user_post['wrong']
+            total = correct + wrong
+            rate = round(float(correct/total),4)
+            if rate >= 0.9998:
+                msg += "`alphabeta`: The bot can't calculate the number of counts "
+                msg += "you need to rank up\n"
+            else:
+                new_rate = rate + 0.00005
+                x = math.ceil((new_rate * total - correct)/(1 - new_rate))
+                new_cor = correct + x
+                new_rate = str(round((rate + 0.0001)*100,2))[:5]
+                msg += f"`alphabeta`: Rank up to {new_rate}% at **{new_cor}**. "
+                msg += f"You need ~**{x}** more numbers.\n"
+        user_post = numselli_collection.find_one(
+            {"_id":user.id},
+            {"correct":1,"wrong":1}
+        )
+        if user_post:
+            correct = user_post['correct']
+            wrong = user_post['wrong']
+            total = correct + wrong
+            rate = round(float(correct/total),4)
+            if rate >= 0.9998:
+                msg += "`numselli`: The bot can't calculate the number of counts "
+                msg += "you need to rank up\n"
+            else:
+                new_rate = rate + 0.00005
+                x = math.ceil((new_rate * total - correct)/(1 - new_rate))
+                new_cor = correct + x
+                new_rate = str(round((rate + 0.0001)*100,2))[:5]
+                msg += f"`numselli`: Rank up to {new_rate}% at **{new_cor}**. "
+                msg += f"You need ~**{x}** more numbers.\n"
+        title_msg = f"Rank up stats for {user}"
+        embedVar = Embed(title=title_msg,description=msg,color=color_lamuse)
+        await ctx.send(embed=embedVar)
+
+    @commands.command()
+    async def run(self,ctx):
+        """Gives the time when the run started"""
+        run_time = time_collection.find_one({"_id":"run"})
+        time_diff = run_time["time_start"] - epoch_time
+        total_seconds = int(time_diff.total_seconds())
+        if total_seconds == 0:
+            await ctx.send("It's been a while since a run")
+        else:
+            await ctx.send(f"Run started at <t:{total_seconds}:T>")
+
+class Reminders(commands.Cog):
+    def __init__(self, bot):
+        self.bot = bot
+
+    @commands.command()
+    async def ogregister(self,ctx):
+        """Register for c!vote reminders"""
+        register_list = misc.find_one({"_id":"ogregister"})
+        userID = ctx.author.id
+        if f"{userID}" not in register_list or register_list[f"{userID}"] == False:
+            misc.update_one(
+                {
+                    "_id":"ogregister"
+                }, {
+                    "$set":
+                    {
+                        f"{userID}":True
+                    }
+                }
+            )
+            msg = f"<@{userID}> is now registered for getting reminders for voting"
+            await ctx.send(msg)
+        else:
+            misc.update_one(
+                {
+                    "_id":"ogregister"
+                }, {
+                    "$set":
+                    {
+                        f"{userID}":False
+                    }
+                }
+            )
+            msg = f"<@{userID}> will not get reminders for voting"
+            await ctx.send(msg)
+
+    @commands.command(aliases=['reminder','rm'])
+    async def reminders(self,ctx,member:discord.Member=None):
+        """Shows the list of reminders the bot has for a user"""
+        user = member or ctx.author
+        rem_list = time_collection.find({"user":user.id})
+        msg = ""
+        time_now = datetime.utcnow().replace(microsecond=0)
+        for item in rem_list:
+            time_diff = item['time'] - time_now
+            time_diff = int(time_diff.total_seconds())
+            if time_diff > 0:
+                total_seconds = int((item['time'] - epoch_time).total_seconds())
+                msg += f"{item['command']} - <t:{total_seconds}:R>\n"
+        embedVar = Embed(title=f"Reminders for {user}",description=msg,color=color_lamuse)
+        await ctx.send(embed=embedVar)
+
+class Vote(commands.Cog):
+    def __init__(self, bot):
+        self.bot = bot
+
+    @commands.command()
+    async def vote(self, ctx):
+        """Vote for the bot"""
+        msg = "Thanks for caring about the bot enough to vote for it, "
+        msg += "but unfortunately since the bot is private, there is no use "
+        msg += "voting for it. Thanks all the same. 🤗 😍"
+        await ctx.send(msg)
+
 
 @bot.event
 async def on_message(message):
@@ -1990,11 +2037,11 @@ async def on_message(message):
     #         time_now = datetime.utcnow()
     #         time_new = time_now + timedelta(hours=int(time[0]),minutes=int(time[1]))
     #         time_new= time_new.replace(tzinfo=None,microsecond=0)
-    #         if time_collection.find_one({"user":user['user'],"command":"abc!shop"}):
+    #         if time_collection.find_one({"user":user['user'],"command":"use abc!shop"}):
     #             time_collection.update_one(
     #                 {
     #                     "user":user['user'],
-    #                     "command":"abc!shop"
+    #                     "command":"use abc!shop"
     #                 }, {
     #                     "$set":
     #                     {
@@ -2007,7 +2054,7 @@ async def on_message(message):
     #                 {
     #                     "time":time_new,
     #                     "user":user['user'],
-    #                     "command":"abc!shop"
+    #                     "command":"use abc!shop"
     #                 }
     #             )
 
@@ -2462,4 +2509,9 @@ try:
 except:
     print("No rate limit")
 
+bot.add_cog(List(bot))
+bot.add_cog(Stats(bot))
+bot.add_cog(AdminCommands(bot))
+bot.add_cog(Reminders(bot))
+bot.add_cog(Vote(bot))
 bot.run(secrets.BOT_TOKEN)
