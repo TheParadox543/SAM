@@ -25,6 +25,7 @@ beta_collection = db['betacollection']
 numselli_collection = db['numsellicollection']
 misc = db['misc']
 time_collection = db['time']
+dank_collection = db['dank']
 epoch_time = datetime(1970,1,1,tzinfo=None)
 
 """Bot date"""
@@ -57,11 +58,12 @@ numselli_channels = {
 }
 prime_bot = 754680630037577859
 prime_channel = 893234574300172358
-sasha_channel = 893237900257419304
 sasha_bot = 862060226798682174
+sasha_channel = 893237900257419304
 scores_channel = 898287795733417984
 mile_channel = 929606005535408159
 workshop_channel = 931498728760672276
+dank_bot = 270904126974590976
 dank_channel = 903015721653653584
 
 dishonorable_id:int = 894404278507167775
@@ -494,12 +496,13 @@ async def id(ctx,user:discord.Member):
 async def run(ctx):
     """Gives the time when the run started"""
     run_time = time_collection.find_one({"_id":"run"})
-    time_diff = run_time["time_start"] - epoch_time
-    total_seconds = int(time_diff.total_seconds())
-    if total_seconds == 0:
-        await ctx.respond("It's been a while since a run")
+    time_now = datetime.utcnow().replace(microsecond=0)
+    time_diff = time_now - run_time["time_last"]
+    if time_diff >= timedelta(minutes=10):
+        await ctx.send("It's been a while since a run")
     else:
-        await ctx.respond(f"Run started at <t:{total_seconds}:T>")
+        total_seconds = int((run_time["time_start"]-epoch_time).total_seconds())
+        await ctx.send(f"Run started at <t:{total_seconds}:T>")
 
 @bot.slash_command(guild_ids=servers)
 async def reminders(ctx):
@@ -515,6 +518,7 @@ async def reminders(ctx):
             msg += f"{item['command']} - <t:{total_seconds}:R>\n"
     embedVar = Embed(title=f"Reminders for {ctx.author}",description=msg,color=color_lamuse)
     await ctx.respond(embed=embedVar)
+
 
 class AdminCommands(commands.Cog, name="Admin Commands"):
     def __init__(self, bot):
@@ -616,6 +620,7 @@ class AdminCommands(commands.Cog, name="Admin Commands"):
             }
         )
 
+
 class List(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
@@ -647,11 +652,10 @@ class List(commands.Cog):
         embedVar = Embed(title=title_msg,description=msg,color=color_lamuse)
         await ctx.send(embed=embedVar)
     
-    @commands.command(aliases=['ocounter','oc'])
+    @commands.group(aliases=['ocounter','oc'],invoke_without_command=True)
     async def ogcounter(self, ctx):
         """
-        Registers a counter as og-counters to receive 
-        saves from users who have extra saves
+        Registers a counter as og-counters to receive saves from users who have extra saves
         """
         user = ctx.author
         user_post = og_collection.find_one({"_id":user.id}, {"counter":1})
@@ -669,7 +673,6 @@ class List(commands.Cog):
                 )
                 msg = f"<@{user.id}> is an og-counter. "
                 msg += "Your name will appear in `oglist`"
-                await ctx.send(msg)
             elif user_post['counter'] == True:
                 og_collection.update_one(
                     {
@@ -683,7 +686,6 @@ class List(commands.Cog):
                 )
                 msg = f"<@{user.id}> is no longer an og-counter. "
                 msg += "Your name will not appear in `oglist`"
-                await ctx.send(msg)
         else:
             og_collection.insert_one(
                 {
@@ -700,6 +702,57 @@ class List(commands.Cog):
             )
             msg = f"<@{user.id}> is and og-counter. "
             msg += "Your name will appear in `oglist`."
+        await ctx.send(msg)
+
+    @ogcounter.command(name="set")
+    @admin_perms()
+    async def og_set(self,ctx,user:discord.Member):
+        """Used to set another counter as ogcounter by admin"""
+        user_post = og_collection.find_one({"_id":user.id}, {"counter":1})
+        if user_post:
+            if 'counter' not in user_post or user_post['counter'] == False:
+                og_collection.update_one(
+                    {
+                        "_id":user.id
+                    }, {
+                        "$set":
+                        {
+                            "counter":True
+                        }
+                    }
+                )
+                msg = f"<@{user.id}> is an og-counter. "
+                msg += "Your name will appear in `oglist`"
+            elif user_post['counter'] == True:
+                og_collection.update_one(
+                    {
+                        "_id":user.id
+                    }, {
+                        "$set":
+                        {
+                            "counter":False
+                        }
+                    }
+                )
+                msg = f"<@{user.id}> is no longer an og-counter. "
+                msg += "Your name will not appear in `oglist`"
+        else:
+            og_collection.insert_one(
+                {
+                    "_id":user.id,
+                    "name":f"{user}",
+                    "correct":0,
+                    "wrong":0,
+                    "current_saves":0,
+                    "total_saves":5,
+                    "streak":0,
+                    "high":0,
+                    "counter":True
+                }
+            )
+            msg = f"<@{user.id}> is and og-counter. "
+            msg += "Your name will appear in `oglist`."
+        await ctx.send(msg)
 
     # @commands.command()
     # async def alphacounter(self,ctx):
@@ -810,13 +863,13 @@ class List(commands.Cog):
         embedVar = Embed(title=title_msg,description=msg,color=color_lamuse)
         await ctx.send(embed=embedVar)
 
-    @commands.command(aliases=['bcounter','bc'])
+    @commands.group(aliases=['bcounter','bc'],imvoke_without_command=True)
     async def betacounter(self, ctx):
         """Registers a counter as AlphaBeta counters"""
         user = ctx.author
         betacounter_role = ctx.guild.get_role(betacounter_id)
-        if beta_collection.find_one({"_id":user.id}):
-            user_post = beta_collection.find_one({"_id":user.id}, {"counter":1})
+        user_post = beta_collection.find_one({"_id":user.id}, {"counter":1})
+        if user_post:
             if 'counter' not in user_post or user_post['counter'] == False:
                 beta_collection.update_one(
                     {
@@ -831,7 +884,6 @@ class List(commands.Cog):
                 await user.add_roles(betacounter_role)
                 msg = f"<@{user.id}> is an AlphaBeta counter. "
                 msg += "Your name will appear in `blist`"
-                await ctx.send(msg)
             elif user_post['counter'] == True:
                 beta_collection.update_one(
                     {
@@ -846,7 +898,6 @@ class List(commands.Cog):
                 await user.remove_roles(betacounter_role)
                 msg = f"<@{user.id}> is no longer an AlphaBeta counter. "
                 msg += "Your name will not appear in `blist`"
-                await ctx.send(msg)
         else:
             beta_collection.insert_one(
                 {
@@ -864,7 +915,62 @@ class List(commands.Cog):
             await user.add_roles(betacounter_role)
             msg = f"<@{user.id}> is an AlphaBeta counter. "
             msg += "Your name will appear in `blist`."
-    
+        await ctx.send(msg)
+
+    @betacounter.command(name='set')
+    @admin_perms()
+    async def beta_set(self, ctx, user:discord.Member):
+        """Used to set another counter as AlphaBeta counter by an admin"""
+        betacounter_role = ctx.guild.get_role(betacounter_id)
+        user_post = beta_collection.find_one({"_id":user.id}, {"counter":1})
+        if user_post:
+            if 'counter' not in user_post or user_post['counter'] == False:
+                beta_collection.update_one(
+                    {
+                        "_id":user.id
+                    }, {
+                        "$set":
+                        {
+                            "counter":True
+                        }
+                    }
+                )
+                await user.add_roles(betacounter_role)
+                msg = f"<@{user.id}> is an AlphaBeta counter. "
+                msg += "Your name will appear in `blist`"
+            elif user_post['counter'] == True:
+                beta_collection.update_one(
+                    {
+                        "_id":user.id
+                    }, {
+                        "$set":
+                        {
+                            "counter":False
+                        }
+                    }
+                )
+                await user.remove_roles(betacounter_role)
+                msg = f"<@{user.id}> is no longer an AlphaBeta counter. "
+                msg += "Your name will not appear in `blist`"
+        else:
+            beta_collection.insert_one(
+                {
+                    "_id":user.id,
+                    "name":f"{user}",
+                    "correct":0,
+                    "wrong":0,
+                    "current_saves":0,
+                    "total_saves":5,
+                    "streak":0,
+                    "high":0,
+                    "counter":True
+                }
+            )
+            await user.add_roles(betacounter_role)
+            msg = f"<@{user.id}> is an AlphaBeta counter. "
+            msg += "Your name will appear in `blist`."
+        await ctx.send(msg)
+
     @commands.command()
     async def checklist(self,ctx,type_check:typing.Literal['og','b','vote']): #'a'
         """Displays the list of people registered to receive saves"""
@@ -916,6 +1022,7 @@ class List(commands.Cog):
             return
         embedVar = Embed(title=title_msg,description=msg,color=color_lamuse)
         await ctx.send(embed=embedVar)
+
 
 class Stats(commands.Cog):
     def __init__(self, bot):
@@ -1219,22 +1326,57 @@ class Stats(commands.Cog):
     async def run(self,ctx):
         """Gives the time when the run started"""
         run_time = time_collection.find_one({"_id":"run"})
-        time_diff = run_time["time_start"] - epoch_time
-        total_seconds = int(time_diff.total_seconds())
-        if total_seconds == 0:
+        time_now = datetime.utcnow().replace(microsecond=0)
+        time_diff = time_now - run_time["time_last"]
+        if time_diff >= timedelta(minutes=10):
             await ctx.send("It's been a while since a run")
         else:
+            total_seconds = int((run_time["time_start"]-epoch_time).total_seconds())
             await ctx.send(f"Run started at <t:{total_seconds}:T>")
+
 
 class Reminders(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
 
-    @commands.command()
+    @commands.group(invoke_without_command=True)
     async def ogregister(self,ctx):
         """Register for c!vote reminders"""
         register_list = misc.find_one({"_id":"ogregister"})
         userID = ctx.author.id
+        if f"{userID}" not in register_list or register_list[f"{userID}"] == False:
+            misc.update_one(
+                {
+                    "_id":"ogregister"
+                }, {
+                    "$set":
+                    {
+                        f"{userID}":True
+                    }
+                }
+            )
+            msg = f"<@{userID}> is now registered for getting reminders for voting"
+            await ctx.send(msg)
+        else:
+            misc.update_one(
+                {
+                    "_id":"ogregister"
+                }, {
+                    "$set":
+                    {
+                        f"{userID}":False
+                    }
+                }
+            )
+            msg = f"<@{userID}> will not get reminders for voting"
+            await ctx.send(msg)
+
+    @ogregister.command(name="set")
+    @admin_perms()
+    async def ogreg_set(self,ctx,user:discord.Member):
+        """Register for c!vote reminders"""
+        register_list = misc.find_one({"_id":"ogregister"})
+        userID = user.id
         if f"{userID}" not in register_list or register_list[f"{userID}"] == False:
             misc.update_one(
                 {
@@ -1277,6 +1419,39 @@ class Reminders(commands.Cog):
                 msg += f"{item['command']} - <t:{total_seconds}:R>\n"
         embedVar = Embed(title=f"Reminders for {user}",description=msg,color=color_lamuse)
         await ctx.send(embed=embedVar)
+
+    @commands.command(invoke_without_command=True)
+    async def dankregister(self,ctx):
+        """Register for dank memer reminders"""
+        register_list = dank_collection.find_one({"_id":"register"})
+        userID = ctx.author.id
+        if f"{userID}" not in register_list or register_list[f"{userID}"] == False:
+            misc.update_one(
+                {
+                    "_id":"ogregister"
+                }, {
+                    "$set":
+                    {
+                        f"{userID}":True
+                    }
+                }
+            )
+            msg = f"<@{userID}> is now registered for getting reminders in dank memer"
+            await ctx.send(msg)
+        else:
+            misc.update_one(
+                {
+                    "_id":"ogregister"
+                }, {
+                    "$set":
+                    {
+                        f"{userID}":False
+                    }
+                }
+            )
+            msg = f"<@{userID}> will not get reminders in dank memer"
+            await ctx.send(msg)
+
 
 class Vote(commands.Cog):
     def __init__(self, bot):
@@ -1795,7 +1970,12 @@ async def on_message(message):
                                 hour1 = float(time1[1])
                                 time_now = datetime.utcnow().replace(microsecond=0)
                                 time_new = time_now + timedelta(hours=hour1)
-                                if time_collection.find_one({"user":user.id,"command":"vote in Discords.com"}):
+                                if time_collection.find_one(
+                                    {
+                                        "user":user.id,
+                                        "command":"vote in Discords.com"
+                                    }
+                                ):
                                     time_collection.update_one(
                                         {
                                             "user":user.id,
@@ -1928,12 +2108,13 @@ async def on_message(message):
                         if ogsave in user.roles:
                             await user.remove_roles(ogsave)
                             msg = f"You can no longer count in <#{og_channel}>"
-                            msg += f"till you have 1 save <@{user}>"
+                            msg += f"till you have 1 save <@{user.id}>"
                             await message.channel.send(msg)
                     else:
                         await message.add_reaction("💾")
                     int_list = re.findall("\d+" ,descript)
-                    user2_id = int(int_list[1])
+                    print(int_list)
+                    user2_id = int(int_list[2])
                     og_collection.update_one(
                         {
                             "_id":user2_id
@@ -2127,8 +2308,7 @@ async def on_message(message):
             time = re.findall("\d+",content)
             user = misc.find_one({"_id":"abc?d"})
             time_now = datetime.utcnow().replace(microsecond=0)
-            hour = int(time[0])
-            min = int(time[1])
+            hour, min = int(time[0]), int(time[1])
             if hour == 0 and min == 0:
                 min = 1
             time_new = time_now + timedelta(hours=hour,minutes=min)
@@ -2214,7 +2394,7 @@ async def on_message(message):
             if 'fields' in embed_content:
                 field1 = embed_content['fields'][0]
                 if re.match('Global Stats',field1['name']):
-                    name = embed_content['title'].split(' ',2)[2]
+                    name = embed_content['title'].split(" ",2)[2]
                     nums = re.findall('[\d\.,]+',field1['value'])
                     correct = int(re.sub(',','',nums[1]))
                     wrong = int(re.sub(',','',nums[2]))
@@ -2301,6 +2481,76 @@ async def on_message(message):
                     #         await message.channel.send(msg)
                     #     else:
                     #         await message.add_reaction("❌")
+
+    """Functions for dank memer"""
+    if channel == dank_channel:
+        if author.id == dank_bot:
+            if message.mentions:
+                userID = message.mentions[0].id
+                register_list = dank_collection.find_one({"_id":"register"})
+                if f"{userID}" in register_list:
+                    if register_list[f"{userID}"] == True:
+                        time_now = message.created_at.replace(tzinfo=None,microsecond=0)
+                        if re.search("You need to wait",content):
+                            nums = re.findall("\d+",content)
+                            min, sec = int(nums[1]), int(nums[2])
+                            time_new = time_now + timedelta(minutes=min,seconds=sec)
+                            if dank_collection.find_one(
+                                {
+                                    "user":userID,
+                                    "command":"go to work"
+                                }
+                            ):
+                                dank_collection.update_one(
+                                    {
+                                        "user":userID,
+                                        "command":"go to work"
+                                    }, {
+                                        "$set":
+                                        {
+                                            "time":time_new
+                                        }
+                                    }
+                                )
+                            else:
+                                dank_collection.insert_one(
+                                    {
+                                        "time":time_new,
+                                        "user":userID,
+                                        "command":"go to work"
+                                    }
+                                )
+                        else:
+                            time_new = time_now + timedelta(hours=1)
+                            if dank_collection.find_one(
+                                {
+                                    "user":userID,
+                                    "command":"go to work"
+                                }
+                            ):
+                                dank_collection.update_one(
+                                    {
+                                        "user":userID,
+                                        "command":"go to work"
+                                    }, {
+                                        "$set":
+                                        {
+                                            "time":time_new
+                                        }
+                                    }
+                                )
+                            else:
+                                dank_collection.insert_one(
+                                    {
+                                        "time":time_new,
+                                        "user":userID,
+                                        "command":"go to work"
+                                    }
+                                )
+            # print(dir(message.reference))
+            # ID = message.reference.message_id
+            # print(ID)
+            # print(guild.get_message(ID))
 
     """For generating the next prime number"""
     # if channel == prime_channel and re.match("\d", content):
@@ -2472,6 +2722,10 @@ async def on_command_error(ctx, error):
         await ctx.reply("You do not have the required permissions to use this command")
     elif isinstance(error, commands.MissingRequiredArgument):
         await ctx.reply("Command is missing an argument")
+    elif isinstance(error, commands.CheckFailure):
+        await ctx.reply("You don't have the required permissions. ")
+    elif isinstance(error, commands.BadLiteralArgument):
+        await ctx.reply("Not a valid choice")
     elif isinstance(error, commands.CommandNotFound):
         pass
     else:
@@ -2488,20 +2742,14 @@ async def check_time():
             command = cursor['command']
             await scores.send(f"<@{user}> time to {command}")
             time_collection.delete_one(cursor)
-    run_time = time_collection.find_one({"_id":"run"})
-    time_diff = time_now - run_time["time_last"]
-    if abs(time_diff) >= timedelta(minutes=10) \
-            and run_time["time_start"]!=epoch_time:
-        time_collection.update_one(
-            {
-                "_id":"run"
-            }, {
-                "$set":
-                {
-                    "time_start":epoch_time
-                }
-            }
-        )
+    if dank_collection.find_one({"time":time_now}):
+        time_cursor = dank_collection.find({"time":time_now})
+        dank_chnl = bot.get_channel(dank_channel)
+        for cursor in time_cursor:
+            user = cursor['user']
+            command = cursor['command']
+            await dank_chnl.send(f"<@{user}> time to {command}")
+            dank_collection.delete_one(cursor)
 
 r = requests.head(url="https://discord.com/api/v1")
 try:
