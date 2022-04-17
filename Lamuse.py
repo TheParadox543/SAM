@@ -61,6 +61,7 @@ prime_channel = 893234574300172358
 sasha_bot = 862060226798682174
 sasha_channel = 893237900257419304
 scores_channel = 898287795733417984
+bot_channel = 892731445376860241
 mile_channel = 929606005535408159
 workshop_channel = 931498728760672276
 dank_bot = 270904126974590976
@@ -519,6 +520,33 @@ async def reminders(ctx):
     embedVar = Embed(title=f"Reminders for {ctx.author}",description=msg,color=color_lamuse)
     await ctx.respond(embed=embedVar)
 
+@bot.slash_command(guild_ids=servers)
+async def prime(ctx, number:Option(int,description="The last number")):
+    """Gives the next prime number"""
+    
+    def prime(num:int):
+        f = False
+        for i in range(3,int(math.sqrt(num))+1,2):
+            if num % i ==0:
+                f = True
+        return f
+
+    def next_prime(num:int):
+        f = True
+        while(f):
+            if num > 2:
+                num += 2
+            else:
+                num += 1
+            f = prime(num)
+        return num
+
+    if number == 2 or (number>2 and number%2==1):
+        next_num = next_prime(number)
+    else:
+        next_num = next_prime(number-1)
+    await ctx.respond(f"`{next_num} is the next prime after {number}`")
+
 
 class AdminCommands(commands.Cog, name="Admin Commands"):
     def __init__(self, bot):
@@ -687,21 +715,7 @@ class List(commands.Cog):
                 msg = f"<@{user.id}> is no longer an og-counter. "
                 msg += "Your name will not appear in `oglist`"
         else:
-            og_collection.insert_one(
-                {
-                    "_id":user.id,
-                    "name":f"{user}",
-                    "correct":0,
-                    "wrong":0,
-                    "current_saves":0,
-                    "total_saves":5,
-                    "streak":0,
-                    "high":0,
-                    "counter":True
-                }
-            )
-            msg = f"<@{user.id}> is and og-counter. "
-            msg += "Your name will appear in `oglist`."
+            msg = "Run stat commands first"
         await ctx.send(msg)
 
     @ogcounter.command(name="set")
@@ -737,21 +751,7 @@ class List(commands.Cog):
                 msg = f"<@{user.id}> is no longer an og-counter. "
                 msg += "Your name will not appear in `oglist`"
         else:
-            og_collection.insert_one(
-                {
-                    "_id":user.id,
-                    "name":f"{user}",
-                    "correct":0,
-                    "wrong":0,
-                    "current_saves":0,
-                    "total_saves":5,
-                    "streak":0,
-                    "high":0,
-                    "counter":True
-                }
-            )
-            msg = f"<@{user.id}> is and og-counter. "
-            msg += "Your name will appear in `oglist`."
+            msg = "Run stat commands first"
         await ctx.send(msg)
 
     # @commands.command()
@@ -899,22 +899,7 @@ class List(commands.Cog):
                 msg = f"<@{user.id}> is no longer an AlphaBeta counter. "
                 msg += "Your name will not appear in `blist`"
         else:
-            beta_collection.insert_one(
-                {
-                    "_id":user.id,
-                    "name":f"{user}",
-                    "correct":0,
-                    "wrong":0,
-                    "current_saves":0,
-                    "total_saves":5,
-                    "streak":0,
-                    "high":0,
-                    "counter":True
-                }
-            )
-            await user.add_roles(betacounter_role)
-            msg = f"<@{user.id}> is an AlphaBeta counter. "
-            msg += "Your name will appear in `blist`."
+            msg = "Run stat commands first"
         await ctx.send(msg)
 
     @betacounter.command(name='set')
@@ -953,22 +938,7 @@ class List(commands.Cog):
                 msg = f"<@{user.id}> is no longer an AlphaBeta counter. "
                 msg += "Your name will not appear in `blist`"
         else:
-            beta_collection.insert_one(
-                {
-                    "_id":user.id,
-                    "name":f"{user}",
-                    "correct":0,
-                    "wrong":0,
-                    "current_saves":0,
-                    "total_saves":5,
-                    "streak":0,
-                    "high":0,
-                    "counter":True
-                }
-            )
-            await user.add_roles(betacounter_role)
-            msg = f"<@{user.id}> is an AlphaBeta counter. "
-            msg += "Your name will appear in `blist`."
+            msg = "Run stat commands first"
         await ctx.send(msg)
 
     @commands.command()
@@ -1420,15 +1390,15 @@ class Reminders(commands.Cog):
         embedVar = Embed(title=f"Reminders for {user}",description=msg,color=color_lamuse)
         await ctx.send(embed=embedVar)
 
-    @commands.command(invoke_without_command=True)
+    @commands.command()#invoke_without_command=True)
     async def dankregister(self,ctx):
         """Register for dank memer reminders"""
         register_list = dank_collection.find_one({"_id":"register"})
         userID = ctx.author.id
         if f"{userID}" not in register_list or register_list[f"{userID}"] == False:
-            misc.update_one(
+            dank_collection.update_one(
                 {
-                    "_id":"ogregister"
+                    "_id":"register"
                 }, {
                     "$set":
                     {
@@ -1439,9 +1409,9 @@ class Reminders(commands.Cog):
             msg = f"<@{userID}> is now registered for getting reminders in dank memer"
             await ctx.send(msg)
         else:
-            misc.update_one(
+            dank_collection.update_one(
                 {
-                    "_id":"ogregister"
+                    "_id":"register"
                 }, {
                     "$set":
                     {
@@ -1489,44 +1459,45 @@ async def on_message(message):
                 number = int(number_str)
                 if number == 0:
                     pass
-                if og_collection.find_one({"_id":user_id}):
-                    user_post = og_collection.find_one(
-                        {"_id":user_id},
-                        {"streak":1,"high":1}
-                    )
+                user_post = og_collection.find_one(
+                    {
+                        "_id":user_id
+                    }, {
+                        "streak":1,
+                        "high":1
+                    }
+                )
+                if user_post:
                     if user_post['streak'] == user_post['high']:
                         og_collection.update_one(
-                            {"_id":user_id},
                             {
-                                "$inc":{"streak":1,"high":1,"correct":1}
+                                "_id":user_id
+                            }, {
+                                "$inc":
+                                {
+                                    "streak":1,
+                                    "high":1,
+                                    "correct":1
+                                }
                             }
                         )
                         if (user_post['streak']+1)%500==0:
                             msg_s = f"n{(user_post['streak']+1)}"
                     else:
                         og_collection.update_one(
-                            {"_id":user_id},
                             {
-                                "$inc":{"streak":1,"correct":1}
+                                "_id":user_id
+                            }, {
+                                "$inc":
+                                {
+                                    "streak":1,
+                                    "correct":1
+                                }
                             }
                         )
                         if (user_post['streak']+1)%500==0:
                             msg_s = f"{(user_post['streak']+1)}"
                     mode = "1"
-                else:
-                    og_collection.insert_one(
-                        {
-                            "_id":user_id,
-                            "name":f"{author}",
-                            "correct":1,
-                            "wrong":0,
-                            "current_saves":1,
-                            "total_saves":3,
-                            "streak":1,
-                            "high":1,
-                            "counter":False
-                        }
-                    )
             except:
                 return
             run_time = time_collection.find_one({"_id":"run"})
@@ -1562,24 +1533,39 @@ async def on_message(message):
                 if number == 0:
                     pass
                 user_post = classic_collection.find_one(
-                    {"_id":user_id},
-                    {"streak":1,"high":1}
+                    {
+                        "_id":user_id
+                    }, {
+                        "streak":1,
+                        "high":1
+                    }
                 )
                 if user_post:
                     if user_post['streak'] == user_post['high']:
                         classic_collection.update_one(
-                            {"_id":user_id},
                             {
-                                "$inc":{"streak":1,"high":1,"correct":1}
+                                "_id":user_id
+                            }, {
+                                "$inc":
+                                {
+                                    "streak":1,
+                                    "high":1,
+                                    "correct":1
+                                }
                             }
                         )
                         if (user_post['streak']+1)%500==0:
                             msg_s = f"n{(user_post['streak']+1)}"
                     else:
                         classic_collection.update_one(
-                            {"_id":user_id},
                             {
-                                "$inc":{"streak":1,"correct":1}
+                                "_id":user_id
+                            }, {
+                                "$inc":
+                                {
+                                    "streak":1,
+                                    "correct":1
+                                }
                             }
                         )
                         if (user['streak']+1)%500==0:
@@ -1647,21 +1633,13 @@ async def on_message(message):
                 return
             if beta_collection.find_one({"_id":user_id}):
                 beta_collection.update_one(
-                    {"_id":user_id},
                     {
-                       "$inc":{"correct":1}
-                    }
-                )
-            else:
-                beta_collection.insert_one(
-                    {
-                        "_id":user_id,
-                        "name":f"{author}",
-                        "correct":1,
-                        "wrong":0,
-                        "current_saves":1,
-                        "total_saves":5,
-                        "counter":False
+                        "_id":user_id
+                    }, {
+                       "$inc":
+                        {
+                           "correct":1
+                        }
                     }
                 )
         elif channel == numselli_channels['binary'] and \
@@ -1729,14 +1707,14 @@ async def on_message(message):
         elif number%1000 == 666:
             await message.add_reaction("<:blobdevil:915054491227795477>")
         if re.match("n", msg_s):
-            scores = bot.get_channel(scores_channel)
+            scores = bot.get_channel(bot_channel)
             msg = f"**{author.display_name}** has reached a new streak of "
             msg += f"**{str(msg_s)[1:]}** with {mode_list[mode]}"
             embedVar = Embed(description=msg,color=color_lamuse)
             await scores.send(embed=embedVar)
             await message.add_reaction("<:blobyes:915054339796639745>")
         elif re.match("\d", msg_s):
-            scores = bot.get_channel(scores_channel)
+            scores = bot.get_channel(bot_channel)
             msg = f"**{author.display_name}** has reached a streak of "
             msg += f"**{msg_s}** with {mode_list[mode]}"
             embedVar = Embed(description=msg,color=color_lamuse)
@@ -1894,7 +1872,7 @@ async def on_message(message):
             else:
                 return
             final_streak = user_post['streak']-1
-            scores = bot.get_channel(scores_channel)
+            scores = bot.get_channel(bot_channel)
             msg = f"**{message.mentions[0].display_name}**'s streak with "
             msg += f"{mode_list[mode]} has been reset from **{final_streak}** to 0"
             embedVar = Embed(title="Streak Ruined",description=msg,color=color_lamuse)
@@ -1929,19 +1907,9 @@ async def on_message(message):
                                 }
                             )
                         else:
-                            og_collection.insert_one(
-                                {
-                                    "_id":user.id,
-                                    "name":f"{user}",
-                                    "correct":0,
-                                    "wrong":0,
-                                    "current_saves":current_saves,
-                                    "total_saves":total_saves,
-                                    "streak":0,
-                                    "high":0,
-                                    "counter":False
-                                }
-                            )
+                            msg = "Run `c!user` first"
+                            await message.reply(msg)
+                            return
                         if dishonorable in user.roles:
                             await user.remove_roles(ogsave)
                             await message.add_reaction("❌")
@@ -1967,7 +1935,7 @@ async def on_message(message):
                             field2 = embed_content['fields'][1]['value']
                             if re.search("You have already",field1):
                                 time1 = re.findall("[\d\.]+",field1)
-                                hour1 = float(time1[1])
+                                hour1 = float(time1[1]) + 0.05
                                 time_now = datetime.utcnow().replace(microsecond=0)
                                 time_new = time_now + timedelta(hours=hour1)
                                 if time_collection.find_one(
@@ -1997,10 +1965,15 @@ async def on_message(message):
                                     )
                             if re.search("You have already", field2):
                                 time2 = re.findall("[\d\.]+",field2)
-                                hour2 = float(time2[1])
+                                hour2 = float(time2[1]) + 0.05
                                 time_now = datetime.utcnow().replace(microsecond=0)
                                 time_new = time_now + timedelta(hours=hour2)
-                                if time_collection.find_one({"user":user.id,"command":"vote in top.gg"}):
+                                if time_collection.find_one(
+                                    {
+                                        "user":user.id,
+                                        "command":"vote in top.gg"
+                                    }
+                                ):
                                     time_collection.update_one(
                                         {
                                             "user":user.id,
@@ -2091,7 +2064,7 @@ async def on_message(message):
                 descript = embed_content['description']
                 if re.findall("saves have been deducted",descript):
                     user_post = misc.find_one({"_id":"c!transfersave"})
-                    user = guild.get_member(user_post['user'])
+                    user:discord.Member = guild.get_member(user_post['user'])
                     current_saves = float(descript.split("`")[5])
                     og_collection.update_one(
                         {
@@ -2113,7 +2086,6 @@ async def on_message(message):
                     else:
                         await message.add_reaction("💾")
                     int_list = re.findall("\d+" ,descript)
-                    print(int_list)
                     user2_id = int(int_list[2])
                     og_collection.update_one(
                         {
@@ -2482,6 +2454,34 @@ async def on_message(message):
                     #     else:
                     #         await message.add_reaction("❌")
 
+    """For generating the next prime number"""
+    if channel == prime_channel and re.match("\d", content):
+        try:
+            num = int(content.split()[0])
+        except:
+            return
+
+        def prime(num:int):
+            f = False
+            for i in range(3,int(math.sqrt(num))+1,2):
+                if num % i ==0:
+                    f = True
+            return f
+
+        def next_prime(num:int):
+            f = True
+            while(f):
+                if num > 2:
+                    num += 2
+                else:
+                    num += 1
+                f = prime(num)
+            return num
+
+        if num == 2 or (num % 2 == 1 and num > 2):
+            next_num = next_prime(num)
+            await message.channel.send(f"`Next is {next_num}`")
+
     """Functions for dank memer"""
     if channel == dank_channel:
         if author.id == dank_bot:
@@ -2552,34 +2552,6 @@ async def on_message(message):
             # print(ID)
             # print(guild.get_message(ID))
 
-    """For generating the next prime number"""
-    # if channel == prime_channel and re.match("\d", content):
-    #     try:
-    #         num = int(content.split()[0])
-    #     except:
-    #         return
-        
-    #     def prime(num:int):
-    #         f = False
-    #         for i in range(3,int(math.sqrt(num))+1,2):
-    #             if num % i ==0:
-    #                 f = True
-    #         return f
-
-    #     def next_prime(num):
-    #         f = True
-    #         while(f):
-    #             if num > 2:
-    #                 num += 2
-    #             else:
-    #                 num += 1
-    #             f = prime(num)
-    #         return num
-
-    #     if num == 2 or (num % 2 == 1 and num > 2):
-    #         next_num = next_prime(num)
-    #         await message.channel.send(f"`Next is {next_num}`")
-
     """Functions related to user input"""
     if re.match("c!user",content,re.I):
         user = re.search("\d+",content)
@@ -2633,8 +2605,7 @@ async def on_message(message):
         emoji_name = content[1:-1]
         for emoji in guild.emojis:
             if emoji_name == emoji.name:
-                await message.channel.send(str(emoji))
-                await message.delete()
+                await message.reply(str(emoji))
                 break
 
     # if message.channel.id == 931498728760672276:
