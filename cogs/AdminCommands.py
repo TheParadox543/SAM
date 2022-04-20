@@ -21,7 +21,7 @@ class AdminCommands(commands.Cog, name="Admin Commands"):
     @admin_perms()
     async def lock(self,ctx,
             bot_name:Option(str,
-                description="The bot that needs to be locked"
+                description="The bot that needs to be locked",
                 choices=["og","classic","abc","prime","numselli"]),
             reason:Option(str,
                 description="Reason for locking the channel",
