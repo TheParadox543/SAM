@@ -1,14 +1,12 @@
 import discord
-from discord import Embed, Option
+from discord import Embed, Option, Member, Role as dRole
 from discord.ext import commands, tasks
 import typing
 import re
-import random
 import math
 import requests
 from datetime import datetime, timedelta, timezone, tzinfo
 import asyncio
-import pymongo
 from pymongo import MongoClient
 import certifi
 
@@ -28,7 +26,7 @@ time_collection = db['time']
 dank_collection = db['dank']
 epoch_time = datetime(1970,1,1,tzinfo=None)
 
-"""Bot date"""
+"""Bot data"""
 lamuse_id = 756905904104013825
 paradox_id = 717240803789111345
 color_lamuse = 0x0a53c7
@@ -151,19 +149,19 @@ async def lock(ctx,
     """Locks the channel manually. You need to have necessary permissions"""
     if bot_name == "og":
         channel = bot.get_channel(og_channel)
-        role = ctx.guild.get_role(og_save_id)
+        role:dRole = ctx.guild.get_role(og_save_id)
     elif bot_name == "classic":
         channel = bot.get_channel(classic_channel)
-        role = ctx.guild.get_role(countaholic_id)
+        role:dRole = ctx.guild.get_role(countaholic_id)
     elif bot_name == "abc":
         channel = bot.get_channel(abc_channel)
-        role = ctx.guild.get_role(abc_save_id)
+        role:dRole = ctx.guild.get_role(abc_save_id)
     elif bot_name == "prime":
         channel = bot.get_channel(prime_channel)
-        role = ctx.guild.get_role(countaholic_id)
+        role:dRole = ctx.guild.get_role(countaholic_id)
     elif bot_name == "numselli":
         await ctx.respond("Locking now")
-        role = ctx.guild.get_role(have_save_id)
+        role:dRole = ctx.guild.get_role(have_save_id)
         for channel_name in numselli_channels:
             channel_id = numselli_channels[channel_name]
             channel = bot.get_channel(channel_id)
@@ -235,19 +233,19 @@ async def unlock(ctx,
     """Unlocks the channels manually. You need to have necessary permissions"""
     if bot_name == "og":
         channel = bot.get_channel(og_channel)
-        role = ctx.guild.get_role(og_save_id)
+        role:dRole = ctx.guild.get_role(og_save_id)
     elif bot_name == "classic":
         channel = bot.get_channel(classic_channel)
-        role = ctx.guild.get_role(countaholic_id)
+        role:dRole = ctx.guild.get_role(countaholic_id)
     elif bot_name == "abc":
         channel = bot.get_channel(abc_channel)
-        role = ctx.guild.get_role(abc_save_id)
+        role:dRole = ctx.guild.get_role(abc_save_id)
     elif bot_name == "prime":
         channel = bot.get_channel(prime_channel)
-        role = ctx.guild.get_role(countaholic_id)
+        role:dRole = ctx.guild.get_role(countaholic_id)
     elif bot_name == "numselli":
         await ctx.respond("Unlocking now")
-        role = ctx.guild.get_role(have_save_id)
+        role:dRole = ctx.guild.get_role(have_save_id)
         for channel_name in numselli_channels:
             channel_id = numselli_channels[channel_name]
             channel = bot.get_channel(channel_id)
@@ -489,7 +487,7 @@ async def currentscores(ctx,
     await ctx.respond(embed=embedVar)
 
 @bot.slash_command(guild_ids=servers)
-async def id(ctx,user:discord.Member):
+async def id(ctx,user:Member):
     """Gives a user's id without pinging them"""
     await ctx.respond(f"{user.id}")
 
@@ -503,7 +501,7 @@ async def run(ctx):
         await ctx.send("It's been a while since a run")
     else:
         total_seconds = int((run_time["time_start"]-epoch_time).total_seconds())
-        await ctx.send(f"Run started at <t:{total_seconds}:T>")
+        await ctx.respond(f"Run started at <t:{total_seconds}:T>")
 
 @bot.slash_command(guild_ids=servers)
 async def reminders(ctx):
@@ -560,13 +558,13 @@ class AdminCommands(commands.Cog, name="Admin Commands"):
         """Locks the channel manually. You need to have necessary permissions"""
         if bot_name == "og":
             channel = bot.get_channel(og_channel)
-            role = ctx.guild.get_role(og_save_id)
+            role:dRole = ctx.guild.get_role(og_save_id)
         elif bot_name == "classic":
             channel = bot.get_channel(classic_channel)
-            role = ctx.guild.get_role(countaholic_id)
+            role:dRole = ctx.guild.get_role(countaholic_id)
         elif bot_name == "abc":
             channel = bot.get_channel(abc_channel)
-            role = ctx.guild.get_role(abc_save_id)
+            role:dRole = ctx.guild.get_role(abc_save_id)
         else:
             return
         overwrites = channel.overwrites_for(role)
@@ -620,13 +618,13 @@ class AdminCommands(commands.Cog, name="Admin Commands"):
         """Unlocks the channels manually. You need to have necessary permissions"""
         if bot_name == "og":
             channel = bot.get_channel(og_channel)
-            role = ctx.guild.get_role(og_save_id)
+            role:dRole = ctx.guild.get_role(og_save_id)
         elif bot_name == "classic":
             channel = bot.get_channel(classic_channel)
-            role = ctx.guild.get_role(countaholic_id)
+            role:dRole = ctx.guild.get_role(countaholic_id)
         elif bot_name == "abc":
             channel = bot.get_channel(abc_channel)
-            role = ctx.guild.get_role(abc_save_id)
+            role:dRole = ctx.guild.get_role(abc_save_id)
         else:
             return
         overwrites = channel.overwrites_for(role)
@@ -720,7 +718,7 @@ class List(commands.Cog):
 
     @ogcounter.command(name="set")
     @admin_perms()
-    async def og_set(self,ctx,user:discord.Member):
+    async def og_set(self,ctx,user:Member):
         """Used to set another counter as ogcounter by admin"""
         user_post = og_collection.find_one({"_id":user.id}, {"counter":1})
         if user_post:
@@ -867,7 +865,7 @@ class List(commands.Cog):
     async def betacounter(self, ctx):
         """Registers a counter as AlphaBeta counters"""
         user = ctx.author
-        betacounter_role = ctx.guild.get_role(betacounter_id)
+        betacounter_role:dRole = ctx.guild.get_role(betacounter_id)
         user_post = beta_collection.find_one({"_id":user.id}, {"counter":1})
         if user_post:
             if 'counter' not in user_post or user_post['counter'] == False:
@@ -904,9 +902,9 @@ class List(commands.Cog):
 
     @betacounter.command(name='set')
     @admin_perms()
-    async def beta_set(self, ctx, user:discord.Member):
+    async def beta_set(self, ctx, user:Member):
         """Used to set another counter as AlphaBeta counter by an admin"""
-        betacounter_role = ctx.guild.get_role(betacounter_id)
+        betacounter_role:dRole = ctx.guild.get_role(betacounter_id)
         user_post = beta_collection.find_one({"_id":user.id}, {"counter":1})
         if user_post:
             if 'counter' not in user_post or user_post['counter'] == False:
@@ -999,7 +997,7 @@ class Stats(commands.Cog):
         self.bot = bot
 
     @commands.command(aliases=['u'])
-    async def user(self,ctx,member:discord.Member=None):
+    async def user(self,ctx,member:Member=None):
         """Displays user stats in the guild"""
         user = member or ctx.author
         embedVar = Embed(title=f"User stats for {user}",color=color_lamuse)
@@ -1186,7 +1184,7 @@ class Stats(commands.Cog):
             return
 
     @commands.command(aliases=["ru"])
-    async def rankup(self,ctx,member:discord.Member=None):
+    async def rankup(self,ctx,member:Member=None):
         """Shows the number of counts required to increase stats"""
         user = member or ctx.author
         msg = ""
@@ -1343,7 +1341,7 @@ class Reminders(commands.Cog):
 
     @ogregister.command(name="set")
     @admin_perms()
-    async def ogreg_set(self,ctx,user:discord.Member):
+    async def ogreg_set(self,ctx,user:Member):
         """Register for c!vote reminders"""
         register_list = misc.find_one({"_id":"ogregister"})
         userID = user.id
@@ -1375,7 +1373,7 @@ class Reminders(commands.Cog):
             await ctx.send(msg)
 
     @commands.command(aliases=['reminder','rm'])
-    async def reminders(self,ctx,member:discord.Member=None):
+    async def reminders(self,ctx,member:Member=None):
         """Shows the list of reminders the bot has for a user"""
         user = member or ctx.author
         rem_list = time_collection.find({"user":user.id})
@@ -1441,10 +1439,10 @@ async def on_message(message):
     if message.author == bot.user: #ignores if message from bot
         return
 
-    content = message.content
-    author = message.author
-    channel = message.channel.id
-    guild = message.guild
+    content:str = message.content
+    author:Member = message.author
+    channel:int = message.channel.id
+    guild:discord.Guild = message.guild
 
     """To update user streak if correct and milestone update"""
     if track_list.count(channel)>0 and \
@@ -1498,7 +1496,7 @@ async def on_message(message):
                         if (user_post['streak']+1)%500==0:
                             msg_s = f"{(user_post['streak']+1)}"
                     mode = "1"
-            except:
+            except Exception:
                 return
             run_time = time_collection.find_one({"_id":"run"})
             time_now = message.created_at.replace(tzinfo=None,microsecond=0)
@@ -1582,7 +1580,7 @@ async def on_message(message):
                             "high":1
                         }
                     )
-            except:
+            except Exception:
                 return
         # elif channel == abc_channel and re.match("[a-zA-Z]", number_str):
         #     number = letter_calc(number_str)
@@ -1629,7 +1627,7 @@ async def on_message(message):
         elif channel == beta_channel and re.match("[a-zA-Z]",number_str):
             try:
                 number = letter_calc(number_str)
-            except:
+            except Exception:
                 return
             if beta_collection.find_one({"_id":user_id}):
                 beta_collection.update_one(
@@ -1646,19 +1644,19 @@ async def on_message(message):
                 re.match("[01]",number_str) :
             try:
                 number = int(number_str, 2)
-            except:
+            except Exception:
                 return
         elif channel == numselli_channels['hex'] and \
                 re.match("[0-9a-fA-F]",number_str):
             try:
                 number = int(number_str, 16)
-            except:
+            except Exception:
                 return
         elif channel == numselli_channels["letters"] and \
                 re.match("[a-zA-Z]",number_str):
             try:
                 number = letter_calc(number_str)
-            except:
+            except Exception:
                 return
         else: 
             return
@@ -1889,8 +1887,8 @@ async def on_message(message):
                     saves = descript.split("**")[1]
                     current_saves = float(saves.split("/")[0])
                     total_saves = int(saves.split("/")[1])
-                    ogsave = guild.get_role(og_save_id)
-                    dishonorable = guild.get_role(dishonorable_id)
+                    ogsave:dRole = guild.get_role(og_save_id)
+                    dishonorable:dRole = guild.get_role(dishonorable_id)
                     user_post = misc.find_one({"_id":"c!vote"})
                     user = guild.get_member(user_post['user'])
                     if user:
@@ -2039,8 +2037,8 @@ async def on_message(message):
                                     "counter":False
                                 }
                             )
-                        og_save:discord.Role = guild.get_role(og_save_id)
-                        dishonorable:discord.Role = guild.get_role(dishonorable_id)
+                        og_save:dRole = guild.get_role(og_save_id)
+                        dishonorable:dRole = guild.get_role(dishonorable_id)
                         if dishonorable in user.roles:
                             await user.remove_roles(og_save)
                             await message.add_reaction("❌")
@@ -2064,7 +2062,7 @@ async def on_message(message):
                 descript = embed_content['description']
                 if re.findall("saves have been deducted",descript):
                     user_post = misc.find_one({"_id":"c!transfersave"})
-                    user:discord.Member = guild.get_member(user_post['user'])
+                    user:Member = guild.get_member(user_post['user'])
                     current_saves = float(descript.split("`")[5])
                     og_collection.update_one(
                         {
@@ -2077,7 +2075,7 @@ async def on_message(message):
                         }
                     )
                     if current_saves < 1:
-                        ogsave = guild.get_role(og_save_id)
+                        ogsave:dRole = guild.get_role(og_save_id)
                         if ogsave in user.roles:
                             await user.remove_roles(ogsave)
                             msg = f"You can no longer count in <#{og_channel}>"
@@ -2255,8 +2253,8 @@ async def on_message(message):
                                     "counter":False
                                 }
                             )
-                        beta_save:discord.Role = guild.get_role(beta_save_id)
-                        dishonorable = guild.get_role(dishonorable_id)
+                        beta_save:dRole = guild.get_role(beta_save_id)
+                        dishonorable:dRole = guild.get_role(dishonorable_id)
                         if dishonorable in user.roles:
                             await user.remove_roles(beta_save)
                             await message.add_reaction("❌")
@@ -2334,8 +2332,8 @@ async def on_message(message):
             user_post = beta_collection.find_one({"_id":userID})
             if user_post:
                 user = guild.get_member(user_test['user'])
-                beta_save = guild.get_role(beta_save_id)
-                dishonorable = guild.get_role(dishonorable_id)
+                beta_save:dRole = guild.get_role(beta_save_id)
+                dishonorable:dRole = guild.get_role(dishonorable_id)
                 actual_saves = user_post['current_saves'] + 1
                 if dishonorable in user.roles:
                     await user.remove_roles(beta_save)
@@ -2403,8 +2401,8 @@ async def on_message(message):
                                     "counter":False
                                 }
                             )
-                        have_save:discord.Role = guild.get_role(have_save_id)
-                        dishonorable:discord.Role = guild.get_role(dishonorable_id)
+                        have_save:dRole = guild.get_role(have_save_id)
+                        dishonorable:dRole = guild.get_role(dishonorable_id)
                         if dishonorable in user.roles:
                             await user.remove_roles(have_save)
                             await message.add_reaction("❌")
@@ -2432,8 +2430,8 @@ async def on_message(message):
                 if user_post:
                     user = guild.get_member(rec_id)
                     actual_saves = user_post['current_saves'] + sent_saves
-                    have_save:discord.Role = guild.get_role(have_save_id)
-                    dishonorable:discord.Role = guild.get_role(dishonorable_id)
+                    have_save:dRole = guild.get_role(have_save_id)
+                    dishonorable:dRole = guild.get_role(dishonorable_id)
                     if dishonorable in user.roles:
                         await user.remove_roles(have_save)
                         await message.add_reaction("❌")
@@ -2458,7 +2456,7 @@ async def on_message(message):
     if channel == prime_channel and re.match("\d", content):
         try:
             num = int(content.split()[0])
-        except:
+        except Exception:
             return
 
         def prime(num:int):
@@ -2486,6 +2484,8 @@ async def on_message(message):
     if channel == dank_channel:
         if author.id == dank_bot:
             if message.mentions:
+                if re.search("Better take care of your pet", content):
+                    return
                 userID = message.mentions[0].id
                 register_list = dank_collection.find_one({"_id":"register"})
                 if f"{userID}" in register_list:
@@ -2602,7 +2602,7 @@ async def on_message(message):
     #     else:
     #         misc.insert_one({"_id":"abc!shop","user":author.id})
     if len(content) > 0 and content[0] == ":" and content[-1] == ":":
-        emoji_name = content[1:-1]
+        emoji_name:str = content[1:-1]
         for emoji in guild.emojis:
             if emoji_name == emoji.name:
                 await message.reply(str(emoji))
@@ -2629,27 +2629,27 @@ async def on_presence_update(member_old,member_new):
         if overrides['classic'] == True:
             return
         channel = bot.get_channel(classic_channel)
-        role = member_new.guild.get_role(countaholic_id)
+        role:dRole = member_new.guild.get_role(countaholic_id)
     elif member_new.id == og_bot:
         if overrides['og'] == True:
             return
         channel = bot.get_channel(og_channel)
-        role = member_new.guild.get_role(og_save_id)
+        role:dRole = member_new.guild.get_role(og_save_id)
     elif member_new.id == abc_bot:
         if overrides['abc'] == True:
             return
         channel = bot.get_channel(abc_channel)
-        role = member_new.guild.get_role(abc_save_id)
+        role:dRole = member_new.guild.get_role(abc_save_id)
     elif member_new.id == prime_bot:
         if overrides['prime'] == True:
             return
         channel = bot.get_channel(prime_channel)
-        role = member_new.guild.get_role(countaholic_id)
+        role:dRole = member_new.guild.get_role(countaholic_id)
     elif member_new.id == sasha_bot:
         channel = bot.get_channel(sasha_channel)
-        role = member_new.guild.get_role(countaholic_id)
+        role:dRole = member_new.guild.get_role(countaholic_id)
     elif member_new.id == numselli_bot :
-        role = member_new.guild.get_role(have_save_id)
+        role:dRole = member_new.guild.get_role(have_save_id)
     else:
         return
     if member_old.raw_status=="online" and member_new.raw_status=="offline":
