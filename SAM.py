@@ -1,6 +1,6 @@
 from aifc import Error
 import discord 
-from discord import Embed, Option, TextChannel
+from discord import Embed, Option, TextChannel, Role as dRole
 from discord.ext import commands, tasks
 import re
 import math
@@ -626,8 +626,13 @@ async def on_message(message):
             final_streak = user_post['streak']-1
             scores = bot.get_channel(bot_channel)
             msg = f"**{message.mentions[0].display_name}**'s streak with "
-            msg += f"{mode_list[mode]} has been reset from **{final_streak}** to 0"
-            embedVar = Embed(title="Streak Ruined",description=msg,color=color_lamuse)
+            msg += f"{mode_list[mode]} has been reset from "
+            msg += f"**{final_streak}** to 0"
+            embedVar = Embed(
+                title="Streak Ruined",
+                description=msg,
+                color=color_lamuse
+            )
             await scores.send(embed=embedVar)
 
     """All functions related to og bot"""
@@ -668,7 +673,8 @@ async def on_message(message):
                         elif current_saves >= 1:
                             if ogsave not in user.roles:
                                 await user.add_roles(ogsave)
-                                msg = f"<@{user.id}> can now count in <#{og_channel}>"
+                                msg = f"<@{user.id}> can "
+                                msg += f"now count in <#{og_channel}>"
                                 await message.channel.send(msg)
                             else:
                                 await message.add_reaction("✅")
@@ -688,7 +694,7 @@ async def on_message(message):
                             if re.search("You have already",field1):
                                 time1 = re.findall("[\d\.]+",field1)
                                 hour1 = float(time1[1]) + 0.05
-                                time_now = datetime.utcnow().replace(microsecond=0)
+                                time_now=datetime.utcnow().replace(microsecond=0)
                                 time_new = time_now + timedelta(hours=hour1)
                                 if time_collection.find_one(
                                     {
@@ -718,7 +724,7 @@ async def on_message(message):
                             if re.search("You have already", field2):
                                 time2 = re.findall("[\d\.]+",field2)
                                 hour2 = float(time2[1]) + 0.05
-                                time_now = datetime.utcnow().replace(microsecond=0)
+                                time_now=datetime.utcnow().replace(microsecond=0)
                                 time_new = time_now + timedelta(hours=hour2)
                                 if time_collection.find_one(
                                     {
@@ -791,8 +797,8 @@ async def on_message(message):
                                     "counter":False
                                 }
                             )
-                        og_save:discord.Role = guild.get_role(og_save_id)
-                        dishonorable:discord.Role = guild.get_role(dishonorable_id)
+                        og_save:dRole = guild.get_role(og_save_id)
+                        dishonorable:dRole = guild.get_role(dishonorable_id)
                         if dishonorable in user.roles:
                             await user.remove_roles(og_save)
                             await message.add_reaction("❌")
@@ -1007,8 +1013,8 @@ async def on_message(message):
                                     "counter":False
                                 }
                             )
-                        beta_save:discord.Role = guild.get_role(beta_save_id)
-                        dishonorable = guild.get_role(dishonorable_id)
+                        beta_save:dRole = guild.get_role(beta_save_id)
+                        dishonorable:dRole = guild.get_role(dishonorable_id)
                         if dishonorable in user.roles:
                             await user.remove_roles(beta_save)
                             await message.add_reaction("❌")
@@ -1158,8 +1164,8 @@ async def on_message(message):
                                     "counter":False
                                 }
                             )
-                        have_save:discord.Role = guild.get_role(have_save_id)
-                        dishonorable:discord.Role = guild.get_role(dishonorable_id)
+                        have_save:dRole = guild.get_role(have_save_id)
+                        dishonorable:dRole = guild.get_role(dishonorable_id)
                         if dishonorable in user.roles:
                             await user.remove_roles(have_save)
                             await message.add_reaction("❌")
@@ -1187,8 +1193,8 @@ async def on_message(message):
                 if user_post:
                     user = guild.get_member(rec_id)
                     actual_saves = user_post['current_saves'] + sent_saves
-                    have_save:discord.Role = guild.get_role(have_save_id)
-                    dishonorable:discord.Role = guild.get_role(dishonorable_id)
+                    have_save:dRole = guild.get_role(have_save_id)
+                    dishonorable:dRole = guild.get_role(dishonorable_id)
                     if dishonorable in user.roles:
                         await user.remove_roles(have_save)
                         await message.add_reaction("❌")
