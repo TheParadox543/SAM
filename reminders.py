@@ -100,8 +100,8 @@ class Reminders(commands.Cog):
         )
         await ctx.send(embed=embedVar)
 
-    @discord.slash_command(guild_ids=servers)
-    async def reminders(self, ctx, 
+    @discord.slash_command(name="reminders", guild_ids=servers)
+    async def slash_reminders(self, ctx, 
             member:Option(dMember,
                 description="The user whose reminders you want to check")=None):
         """Shows the list of reminders the bot has for a user"""

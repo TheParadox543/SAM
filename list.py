@@ -1,6 +1,7 @@
 import discord 
 from discord import Embed, Option, Member as dMember
 from discord.ext import commands
+import typing
 
 from bot_secrets import *
 from database import *
@@ -211,8 +212,7 @@ class List(commands.Cog):
 
     @commands.command()
     async def checklist(self, ctx,
-            type_check:Option(str,
-            choices=["og","b","vote"])): #'a'
+            type_check:typing.Literal["og","b","vote"]): #'a'
         """Displays the list of people registered to receive saves"""
         msg = ""
         if type_check == 'og':
@@ -263,8 +263,8 @@ class List(commands.Cog):
         embedVar = Embed(title=title_msg,description=msg,color=color_lamuse)
         await ctx.send(embed=embedVar)
 
-    @discord.slash_command(guild_ids=servers)
-    async def checklist(self, ctx,
+    @discord.slash_command(name="checklist", guild_ids=servers)
+    async def slash_checklist(self, ctx,
             type_check:Option(str,
                 description="List type",
                 choices=['og','b','vote'])): #'a'

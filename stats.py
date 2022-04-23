@@ -3,6 +3,7 @@ from discord import Embed, Member as dMember, Option
 from discord.ext import commands
 from datetime import datetime, timedelta
 import math
+import typing
 
 from bot_secrets import *
 from database import *
@@ -138,17 +139,17 @@ class Stats(commands.Cog):
         await ctx.send(embed=embedVar)
     
     @commands.command(aliases=["cs"])
-    async def currentscore(self,ctx,mode:int=1,page:int=1):
+    async def currentscore(self,ctx,mode:typing.Literal["og", "classic"],page:int=1):
         """Shows the streak currentscores"""
         i=(page-1)*10
         msg = ""
-        if mode == 1:
+        if mode == "og":
             counter_cursor = og_collection.find(
                 {},
                 {'name':1,'streak':1,'_id':0}
             ).sort("streak",-1).skip(i).limit(10)
             title_msg = "Current streaks for og counting"
-        elif mode == 2:
+        elif mode == "classic":
             counter_cursor = classic_collection.find(
                 {},
                 {'name':1,'streak':1,'_id':0}
@@ -164,17 +165,19 @@ class Stats(commands.Cog):
             return
         for counter in counter_cursor:
             i+=1
-            msg += f"{i}. {counter['name']} - {counter['streak']}\n"
+            name = counter.get('name',"Unknown")
+            high = counter.get('high',0)
+            msg += f"{i}. {name} - {high}\n"
         if msg!="":
             embedVar = Embed(title=title_msg,description=msg,color=color_lamuse)
             await ctx.send(embed=embedVar)
         else:
             return
 
-    @discord.slash_command(guild_ids=servers)
+    @discord.slash_command(name="currentscore",guild_ids=servers)
     async def currentscores(self, ctx,
             mode:Option(str,
-                description="Leaderboard type",
+                description="Leaderboard mode",
                 choices=["og","classic"]),#'abc'
             page:Option(int,
                 description="The page number of the leaderboard")=1):
@@ -190,7 +193,9 @@ class Stats(commands.Cog):
                 ).sort("streak",-1).skip(i).limit(10)
                 for counter in counter_cursor:
                     i+=1
-                    msg += f"{i}. {counter['name']} - {counter['streak']}\n"
+                    name = counter.get('name',"Unknown")
+                    high = counter.get('high',0)
+                    msg += f"{i}. {name} - {high}\n"
                 if msg=="":
                     counter_num = og_collection.count_documents(
                         {
@@ -211,7 +216,9 @@ class Stats(commands.Cog):
                 ).sort("streak",-1).skip(i).limit(10)
                 for counter in counter_cursor:
                     i+=1
-                    msg += f"{i}. {counter['name']} - {counter['streak']}\n"
+                    name = counter.get('name',"Unknown")
+                    high = counter.get('high',0)
+                    msg += f"{i}. {name} - {high}\n"
                 if msg=="":
                     counter_num = classic_collection.count_documents(
                         {
@@ -285,8 +292,8 @@ class Stats(commands.Cog):
         else:
             return
 
-    @discord.slash_command(guild_ids=servers)
-    async def leaderboard(self, ctx,
+    @discord.slash_command(name="leaderboard", guild_ids=servers)
+    async def slash_leaderboard(self, ctx,
             mode:Option(str,
                 description="Leaderboard type",
                 choices=["og","classic"]),#'abc'
@@ -327,7 +334,9 @@ class Stats(commands.Cog):
                 ).sort("high",-1).skip(i).limit(10)
                 for counter in counter_cursor:
                     i+=1
-                    msg += f"{i}. {counter['name']} - {counter['high']}\n"
+                    name = counter.get('name',"Unknown")
+                    high = counter.get('high',0)
+                    msg += f"{i}. {name} - {high}\n"
                 if msg=="":
                     counter_num = classic_collection.count_documents(
                         {
@@ -473,7 +482,7 @@ class Stats(commands.Cog):
         await ctx.send(embed=embedVar)
 
     @commands.command(name="run")
-    async def cmd_run(self, ctx):
+    async def run(self, ctx):
         """Gives the time when the run started"""
         run_time = time_collection.find_one({"_id":"run"})
         time_now = datetime.utcnow().replace(microsecond=0)
