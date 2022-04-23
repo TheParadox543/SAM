@@ -481,6 +481,23 @@ class Stats(commands.Cog):
         embedVar = Embed(title=title_msg,description=msg,color=color_lamuse)
         await ctx.send(embed=embedVar)
 
+    @commands.comand(name="alt")
+    async def alt(self, ctx, user:dMember):
+        alt_id = ctx.author.id
+        main_id = user.id
+        og_collection.update_one(
+            {
+                "_id":alt_id
+            }, {
+                "$set":
+                {
+                    "streak":"No streaks",
+                    "high":"No streaks",
+                    "alt":main_id
+                }
+            }
+        )
+
     @commands.command(name="run")
     async def run(self, ctx):
         """Gives the time when the run started"""

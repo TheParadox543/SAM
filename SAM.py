@@ -1,6 +1,6 @@
 from aifc import Error
 import discord 
-from discord import Embed, Option, TextChannel, Role as dRole
+from discord import Embed, Option, TextChannel, Role as dRole, Member as dMember
 from discord.ext import commands, tasks
 import re
 import math
@@ -183,10 +183,10 @@ async def on_message(message):
     if message.author == bot.user: #ignores if message from bot
         return
 
-    content = message.content
-    author = message.author
-    channel = message.channel.id
-    guild = message.guild
+    content:str = message.content
+    author:dMember = message.author
+    channel:int = message.channel.id
+    guild:discord.Guild = message.guild
 
     """To update user streak if correct and milestone update"""
     if track_list.count(channel)>0 and \
@@ -194,6 +194,7 @@ async def on_message(message):
             re.match("\w", content) and author.bot == False:
         number_str = content.split()[0]
         number_str = number_str.upper()
+        user = author
         user_id = author.id
         msg_s = ""
         if channel == og_channel and re.match("\d", number_str):
@@ -201,44 +202,94 @@ async def on_message(message):
                 number = int(number_str)
                 if number == 0:
                     pass
-                user_post = og_collection.find_one(
+                user_post:dict = og_collection.find_one(
                     {
                         "_id":user_id
                     }, {
                         "streak":1,
-                        "high":1
+                        "high":1,
+                        "alt":1
                     }
                 )
                 if user_post:
-                    if user_post['streak'] == user_post['high']:
+                    if "alt" in user_post:
+                        user_main = user_post.get("alt")
+                        user = guild.get_member(user_main)
+                        user_post2:dict = og_collection.find_one(
+                            {
+                                "_id":user_main
+                            }, {
+                                "streak":1,
+                                "high":1
+                            }
+                        )
+                        if user_post2['streak'] == user_post2['high']:
+                            og_collection.update_one(
+                                {
+                                    "_id":user_main
+                                }, {
+                                    "$inc":
+                                    {
+                                        "streak":1,
+                                        "high":1,
+                                    }
+                                }
+                            )
+                            if (user_post2['streak']+1)%500==0:
+                                msg_s = f"n{(user_post2['streak']+1)}"
+                        else:
+                            og_collection.update_one(
+                                {
+                                    "_id":user_main
+                                }, {
+                                    "$inc":
+                                    {
+                                        "streak":1
+                                    }
+                                }
+                            )
+                            if (user_post2['streak']+1)%500==0:
+                                msg_s = f"{(user_post2['streak']+1)}"
                         og_collection.update_one(
                             {
                                 "_id":user_id
                             }, {
                                 "$inc":
                                 {
-                                    "streak":1,
-                                    "high":1,
                                     "correct":1
                                 }
                             }
                         )
-                        if (user_post['streak']+1)%500==0:
-                            msg_s = f"n{(user_post['streak']+1)}"
                     else:
-                        og_collection.update_one(
-                            {
-                                "_id":user_id
-                            }, {
-                                "$inc":
+                        if user_post['streak'] == user_post['high']:
+                            og_collection.update_one(
                                 {
-                                    "streak":1,
-                                    "correct":1
+                                    "_id":user_id
+                                }, {
+                                    "$inc":
+                                    {
+                                        "streak":1,
+                                        "high":1,
+                                        "correct":1
+                                    }
                                 }
-                            }
-                        )
-                        if (user_post['streak']+1)%500==0:
-                            msg_s = f"{(user_post['streak']+1)}"
+                            )
+                            if (user_post['streak']+1)%500==0:
+                                msg_s = f"n{(user_post['streak']+1)}"
+                        else:
+                            og_collection.update_one(
+                                {
+                                    "_id":user_id
+                                }, {
+                                    "$inc":
+                                    {
+                                        "streak":1,
+                                        "correct":1
+                                    }
+                                }
+                            )
+                            if (user_post['streak']+1)%500==0:
+                                msg_s = f"{(user_post['streak']+1)}"
                     mode = "1"
             except:
                 return
@@ -460,14 +511,14 @@ async def on_message(message):
             await message.add_reaction("<:blobdevil:915054491227795477>")
         if re.match("n", msg_s):
             scores = bot.get_channel(bot_channel)
-            msg = f"**{author.display_name}** has reached a new streak of "
+            msg = f"**{user.display_name}** has reached a new streak of "
             msg += f"**{str(msg_s)[1:]}** with {mode_list[mode]}"
             embedVar = Embed(description=msg,color=color_lamuse)
             await scores.send(embed=embedVar)
             await message.add_reaction("<:blobyes:915054339796639745>")
         elif re.match("\d", msg_s):
             scores = bot.get_channel(bot_channel)
-            msg = f"**{author.display_name}** has reached a streak of "
+            msg = f"**{user.display_name}** has reached a streak of "
             msg += f"**{msg_s}** with {mode_list[mode]}"
             embedVar = Embed(description=msg,color=color_lamuse)
             await scores.send(embed=embedVar)
@@ -478,49 +529,101 @@ async def on_message(message):
             re.findall("RUINED", content, re.I) or \
             re.search("Wrong number!", content)) and author.bot == True : 
         if message.mentions:
+            user = message.mentions[0]
             user_id = message.mentions[0].id
             if channel == og_channel and author.id == og_bot:
                 user_post = og_collection.find_one(
                     {"_id":user_id},
-                    {"streak":1,"high":1}
+                    {"streak":1,"high":1,"alt":1}
                 )
-                final_streak = user_post['streak'] - 1
-                if user_post['streak'] == user_post['high']:
+                if "alt" in user_post:
+                    user_main = user_post["alt"]
+                    user = guild.get_member(user_main)
+                    user_post2 = og_collection.find_one(
+                        {
+                            "_id":user_main
+                        }, {
+                            "streak":1,
+                            "high":1
+                        }
+                    )
+                    final_streak = user_post2["streak"] - 1
+                    if user_post2['streak'] == user_post2['high']:
+                        og_collection.update_one(
+                            {
+                                "_id":user_main
+                            }, {
+                                "$inc":
+                                {
+                                    "high":-1
+                                },
+                                "$set":
+                                {
+                                    "streak":0
+                                }
+                            }
+                        )
+                    else:
+                        og_collection.update_one(
+                            {
+                                "_id":user_main
+                            }, {
+                                "$set":
+                                {
+                                    "streak":0
+                                }
+                            }
+                        )
                     og_collection.update_one(
                         {
                             "_id":user_id
                         }, {
                             "$inc":
                             {
-                                "high":-1,
-                                "wrong":1,
                                 "correct":-1,
+                                "wrong":1,
                                 "current_saves":-1
-                            },
-                            "$set":
-                            {
-                                "streak":0
                             }
                         }
                     )
                 else:
-                    og_collection.update_one(
-                        {
-                            "_id":user_id
-                        }, {
-                            "$inc":
+                    final_streak = user_post['streak'] - 1
+                    if user_post['streak'] == user_post['high']:
+                        og_collection.update_one(
                             {
-                                "wrong":1,
-                                "correct":-1,
-                                "current_saves":-1
-                            },
-                            "$set":
-                            {
-                                "streak":0
+                                "_id":user_id
+                            }, {
+                                "$inc":
+                                {
+                                    "high":-1,
+                                    "wrong":1,
+                                    "correct":-1,
+                                    "current_saves":-1
+                                },
+                                "$set":
+                                {
+                                    "streak":0
+                                }
                             }
-                        }
-                    )
-                mode="1" 
+                        )
+                    else:
+                        og_collection.update_one(
+                            {
+                                "_id":user_id
+                            }, {
+                                "$inc":
+                                {
+                                    "wrong":1,
+                                    "correct":-1,
+                                    "current_saves":-1
+                                },
+                                "$set":
+                                {
+                                    "streak":0
+                                }
+                            }
+                        )
+                    mode="1" 
             elif channel == classic_channel and author.id == classic_bot:
                 user_post = classic_collection.find_one(
                     {
