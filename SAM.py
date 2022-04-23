@@ -30,12 +30,16 @@ track_list = [
 emoji_list = [
     "<a:confetti:914965969661751309>", 
     "<a:catjump:915069990951059467>", 
-    "<a:pepeflame:914966371752882217", 
-    "<a:pepelaugh:924117672550105089>",
-    "<a:rainbowboy:930683298710159360>",
+    # "<a:pepeflame:914966371752882217", 
+    # "<a:pepelaugh:924117672550105089>",
+    # "<a:rainbowboy:930683298710159360>",
     "<a:hypeboy:914966295592710194>",
-    "<a:pepecoolclap:930683139028844544>", 
-    "<a:rainbowglowstickvibeslow:915069470198865961>"
+    "<a:blobproud:953107361470496849>",
+    "<a:emoji_rainbow_eyes:953064880066416713>",
+    "<a:runningmanyellow:915054034589732894>",
+    "<a:wiggle:915069970289946654>",
+    "<a:cat_with_heart:953064613392576542>"
+    # "<a:rainbowglowstickvibeslow:915069470198865961>"
 ]
 mode_list = {
     "1": "**counting**",
@@ -411,19 +415,26 @@ async def on_message(message):
                 if number%1000 == 0 and channel != classic_channel:
                     await message.add_reaction("❤️‍🔥")
                     milestone = bot.get_channel(mile_channel)
+                    time = int(message.created_at.timesamp())
                     if channel == og_channel:
+                        if number == 1_000_000:
+                            msg = "**WE HIT A** __***MILLION***__ at "
+                            msg += f"<t:{time}:F>!!! **SUPERB WORK EVERYONE**\n"
+                            msg += "**LET'S KEEP IT GOING**"
+                            await milestone.send(msg)
+                            msg = ""
+                            for emoji in emoji_list:
+                                msg += f"{emoji} "
+                            await milestone.send(msg)
+                            return
                         sen = ""
                         while(len(number_str)>0):
                             sen = number_str[-3:] + sen
                             number_str = number_str[:-3]
                             if len(number_str)>0:
                                 sen = "," + sen
-                        time_now = message.created_at.replace(tzinfo=None,microsecond=0)
-                        time_diff = time_now - epoch_time
-                        total_seconds = int(time_diff.total_seconds())
                         msg = f"Reached **{sen}** in <#{channel}> - "
-                        msg += f"<t:{total_seconds}:F>"
-                        await milestone.send(msg)
+                        msg += f"<t:{time}:F>"
                     else:
                         num_str = str(number)
                         sen = ""
@@ -432,12 +443,9 @@ async def on_message(message):
                             num_str = num_str[:-3]
                             if len(num_str)>0:
                                 sen = "," + sen
-                        time_now = message.created_at.replace(tzinfo=None,microsecond=0)
-                        time_diff = time_now - epoch_time
-                        total_seconds = int(time_diff.total_seconds())
                         msg = f"Reached **{number_str}** ({sen}) in "
-                        msg += f"<#{channel}> - <t:{total_seconds}:F>"
-                        await milestone.send(msg)
+                        msg += f"<#{channel}> - <t:{time}:F>"
+                    await milestone.send(msg)
                 else:
                     await message.add_reaction("🔥")
             else:
