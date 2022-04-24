@@ -135,6 +135,8 @@ class Stats(commands.Cog):
             msg += f"\nCorrect: {correct}"
             msg += f"\nWrong: {wrong}"
             msg += f"\nSaves: {current_saves}/{user_post['total_saves']}"
+            msg += f"\n\nCurrent Streak: {user_post.get('streak',0)}"
+            msg += f"\nHighest Streak: {user_post.get('high',0)}"
             embedVar.add_field(name=mode_list["5"],value=msg)
         await ctx.send(embed=embedVar)
     
@@ -481,8 +483,9 @@ class Stats(commands.Cog):
         embedVar = Embed(title=title_msg,description=msg,color=color_lamuse)
         await ctx.send(embed=embedVar)
 
-    @commands.comand(name="alt")
+    @commands.command(name="alt")
     async def alt(self, ctx, user:dMember):
+        """Replaces alt streaks for main streaks (only in og for now)"""
         alt_id = ctx.author.id
         main_id = user.id
         og_collection.update_one(
@@ -497,6 +500,31 @@ class Stats(commands.Cog):
                 }
             }
         )
+        classic_collection.update_one(
+            {
+                "_id":alt_id
+            }, {
+                "$set":
+                {
+                    "streak":"No streaks",
+                    "high":"No streaks",
+                    "alt":main_id
+                }
+            }
+        )
+        numselli_collection.update_one(
+            {
+                "_id":alt_id
+            }, {
+                "$set":
+                {
+                    "streak":"No streaks",
+                    "high":"No streaks",
+                    "alt":main_id
+                }
+            }
+        )
+        await ctx.send(f"Streaks of {ctx.author} will be given to {user}")
 
     @commands.command(name="run")
     async def run(self, ctx):

@@ -43,12 +43,13 @@ emoji_list = [
 ]
 mode_list = {
     "1": "**counting**",
-    "2": "**countingclassic**",
+    "2": "**classic**",
     "3": "**ABC Counting**",
     "4": "**AlphaBeta**",
     "5": "**Numselli**"
 }
 cogs = ["admincommands", "list", "stats", "reminders"]
+roman = {'I':1,'V':5,'X':10,'L':50,'C':100,'D':500,'M':1000,'IV':4,'IX':9,'XL':40,'XC':90,'CD':400,'CM':900}
 epoch_time = datetime(1970,1,1,tzinfo=None)
 
 """Creating object of the bot"""
@@ -330,40 +331,90 @@ async def on_message(message):
                         "_id":user_id
                     }, {
                         "streak":1,
-                        "high":1
+                        "high":1,
+                        "alt":1
                     }
                 )
                 if user_post:
-                    if user_post['streak'] == user_post['high']:
+                    if "alt" in user_post:
+                        user_main = user_post.get("alt")
+                        user = guild.get_member(user_main)
+                        user_post2:dict = classic_collection.find_one(
+                            {
+                                "_id":user_main
+                            }, {
+                                "streak":1,
+                                "high":1
+                            }
+                        )
+                        if user_post2['streak'] == user_post2['high']:
+                            classic_collection.update_one(
+                                {
+                                    "_id":user_main
+                                }, {
+                                    "$inc":
+                                    {
+                                        "streak":1,
+                                        "high":1,
+                                    }
+                                }
+                            )
+                            if (user_post2['streak']+1)%500==0:
+                                msg_s = f"n{(user_post2['streak']+1)}"
+                        else:
+                            classic_collection.update_one(
+                                {
+                                    "_id":user_main
+                                }, {
+                                    "$inc":
+                                    {
+                                        "streak":1
+                                    }
+                                }
+                            )
+                            if (user_post2['streak']+1)%500==0:
+                                msg_s = f"{(user_post2['streak']+1)}"
                         classic_collection.update_one(
                             {
                                 "_id":user_id
                             }, {
                                 "$inc":
                                 {
-                                    "streak":1,
-                                    "high":1,
                                     "correct":1
                                 }
                             }
                         )
-                        if (user_post['streak']+1)%500==0:
-                            msg_s = f"n{(user_post['streak']+1)}"
                     else:
-                        classic_collection.update_one(
-                            {
-                                "_id":user_id
-                            }, {
-                                "$inc":
+                        if user_post['streak'] == user_post['high']:
+                            classic_collection.update_one(
                                 {
-                                    "streak":1,
-                                    "correct":1
+                                    "_id":user_id
+                                }, {
+                                    "$inc":
+                                    {
+                                        "streak":1,
+                                        "high":1,
+                                        "correct":1
+                                    }
                                 }
-                            }
-                        )
-                        if (user['streak']+1)%500==0:
-                            msg_s = f"{(user_post['streak']+1)}"
-                    mode = "2"
+                            )
+                            if (user_post['streak']+1)%500==0:
+                                msg_s = f"n{(user_post['streak']+1)}"
+                        else:
+                            classic_collection.update_one(
+                                {
+                                    "_id":user_id
+                                }, {
+                                    "$inc":
+                                    {
+                                        "streak":1,
+                                        "correct":1
+                                    }
+                                }
+                            )
+                            if (user['streak']+1)%500==0:
+                                msg_s = f"{(user_post['streak']+1)}"
+                        mode = "2"
                 else:
                     classic_collection.insert_one(
                         {
@@ -435,30 +486,167 @@ async def on_message(message):
                         }
                     }
                 )
-        elif channel == numselli_channels['binary'] and \
-                re.match("[01]",number_str) :
-            try:
-                number = int(number_str, 2)
-            except:
+        elif channel in numselli_channels.values():
+            if channel == numselli_channels["whole"] and \
+                    re.match("\d", number_str):
+                try:
+                    number = int(number_str)
+                except:
+                    return
+            elif channel == numselli_channels["letters"] and \
+                    re.match("[a-zA-Z]",number_str):
+                try:
+                    number = letter_calc(number_str)
+                except:
+                    return
+            elif channel == numselli_channels['binary'] and \
+                    re.match("[01]",number_str) :
+                try:
+                    number = int(number_str, 2)
+                except:
+                    return
+            elif channel == numselli_channels["decimal"] and \
+                    re.match("\d", number_str):
+                try:
+                    number = int(float(number_str)*10)
+                except:
+                    return
+            elif channel == numselli_channels['hex'] and \
+                    re.match("[0-9a-fA-F]",number_str):
+                try:
+                    number = int(number_str, 16)
+                except:
+                    return
+            elif channel == numselli_channels["roman"] and \
+                    re.match("[IVXLCDM]", number_str):
+                try:
+                    i = 0
+                    number = 0
+                    while i < len(number_str):
+                        if i+1<len(number_str) and number_str[i:i+2] in roman:
+                            number+=roman[number_str[i:i+2]]
+                            i+=2
+                        else:
+                            #print(i)
+                            number+=roman[number_str[i]]
+                            i+=1
+                except:
+                    return
+            elif channel == numselli_channels["two"] and \
+                    re.match("\d", number_str):
+                try:
+                    number = int(int(number_str)/2)
+                except:
+                    return
+            elif channel == numselli_channels["five"] and \
+                    re.match("\d", number_str):
+                try:
+                    number = int(int(number_str)/5)
+                except:
+                    return
+            elif channel == numselli_channels["ten"] and \
+                    re.match("\d", number_str):
+                try:
+                    number = int(int(number_str)/10)
+                except:
+                    return
+            elif channel == numselli_channels["hundred"] and \
+                    re.match("\d", number_str):
+                try:
+                    number = int(int(number_str)/100)
+                except:
+                    return
+            else:
                 return
-        elif channel == numselli_channels['hex'] and \
-                re.match("[0-9a-fA-F]",number_str):
-            try:
-                number = int(number_str, 16)
-            except:
-                return
-        elif channel == numselli_channels["letters"] and \
-                re.match("[a-zA-Z]",number_str):
-            try:
-                number = letter_calc(number_str)
-            except:
-                return
-        elif channel == numselli_channels["whole"] and \
-                re.match("\d", number_str):
-            try:
-                number = int(number_str)
-            except:
-                return
+            user_post:dict = numselli_collection.find_one(
+                {
+                    "_id":user_id
+                }, {
+                    "streak":1,
+                    "high":1,
+                    "alt":1
+                }
+            )
+            if user_post:
+                if "alt" in user_post:
+                    user_main = user_post.get("alt")
+                    user = guild.get_member(user_main)
+                    user_post2:dict = numselli_collection.find_one(
+                        {
+                            "_id":user_main
+                        }, {
+                            "streak":1,
+                            "high":1
+                        }
+                    )
+                    if user_post2['streak'] == user_post2['high']:
+                        numselli_collection.update_one(
+                            {
+                                "_id":user_main
+                            }, {
+                                "$inc":
+                                {
+                                    "streak":1,
+                                    "high":1,
+                                }
+                            }
+                        )
+                        if (user_post2['streak']+1)%500==0:
+                            msg_s = f"n{(user_post2['streak']+1)}"
+                    else:
+                        numselli_collection.update_one(
+                            {
+                                "_id":user_main
+                            }, {
+                                "$inc":
+                                {
+                                    "streak":1
+                                }
+                            }
+                        )
+                        if (user_post2['streak']+1)%500==0:
+                            msg_s = f"{(user_post2['streak']+1)}"
+                    numselli_collection.update_one(
+                        {
+                            "_id":user_id
+                        }, {
+                            "$inc":
+                            {
+                                "correct":1
+                            }
+                        }
+                    )
+                else:
+                    if user_post['streak'] == user_post['high']:
+                        numselli_collection.update_one(
+                            {
+                                "_id":user_id
+                            }, {
+                                "$inc":
+                                {
+                                    "streak":1,
+                                    "high":1,
+                                    "correct":1
+                                }
+                            }
+                        )
+                        if (user_post['streak']+1)%500==0:
+                            msg_s = f"n{(user_post['streak']+1)}"
+                    else:
+                        numselli_collection.update_one(
+                            {
+                                "_id":user_id
+                            }, {
+                                "$inc":
+                                {
+                                    "streak":1,
+                                    "correct":1
+                                }
+                            }
+                        )
+                        if (user_post['streak']+1)%500==0:
+                            msg_s = f"{(user_post['streak']+1)}"
+                mode = "5"
         else: 
             return
         if number%100 == 0 and number!=0:
@@ -466,8 +654,9 @@ async def on_message(message):
                 if number%1000 == 0 and channel != classic_channel:
                     await message.add_reaction("❤️‍🔥")
                     milestone = bot.get_channel(mile_channel)
-                    time = int(message.created_at.timesamp())
-                    if channel == og_channel:
+                    time = int(message.created_at.timestamp())
+                    if channel == og_channel \
+                            or channel == numselli_channels["whole"]:
                         if number == 1_000_000:
                             msg = "**WE HIT A** __***MILLION***__ at "
                             msg += f"<t:{time}:F>!!! **SUPERB WORK EVERYONE**\n"
@@ -533,8 +722,13 @@ async def on_message(message):
             user_id = message.mentions[0].id
             if channel == og_channel and author.id == og_bot:
                 user_post = og_collection.find_one(
-                    {"_id":user_id},
-                    {"streak":1,"high":1,"alt":1}
+                    {
+                        "_id":user_id
+                    }, {
+                        "streak":1,
+                        "high":1,
+                        "alt":1
+                    }
                 )
                 if "alt" in user_post:
                     user_main = user_post["alt"]
@@ -630,42 +824,93 @@ async def on_message(message):
                         "_id":user_id
                     }, {
                         "streak":1,
-                        "high":1
+                        "high":1,
+                        "alt":1
                     }
                 )
-                final_streak = user_post['streak'] - 1
-                if user_post['streak'] == user_post['high']:
+                if "alt" in user_post:
+                    user_main = user_post["alt"]
+                    user = guild.get_member(user_main)
+                    user_post2 = classic_collection.find_one(
+                        {
+                            "_id":user_main
+                        }, {
+                            "streak":1,
+                            "high":1
+                        }
+                    )
+                    final_streak = user_post2["streak"] - 1
+                    if user_post2['streak'] == user_post2['high']:
+                        classic_collection.update_one(
+                            {
+                                "_id":user_main
+                            }, {
+                                "$inc":
+                                {
+                                    "high":-1
+                                },
+                                "$set":
+                                {
+                                    "streak":0
+                                }
+                            }
+                        )
+                    else:
+                        classic_collection.update_one(
+                            {
+                                "_id":user_main
+                            }, {
+                                "$set":
+                                {
+                                    "streak":0
+                                }
+                            }
+                        )
                     classic_collection.update_one(
                         {
                             "_id":user_id
                         }, {
                             "$inc":
                             {
-                                "high":-1,
-                                "wrong":1,
-                                "correct":-1
-                            },
-                            "$set":
-                            {
-                                "streak":0
+                                "correct":-1,
+                                "wrong":1
                             }
                         }
                     )
                 else:
-                    classic_collection.update_one(
-                        {"_id":user_id},
-                        {
-                            "$inc":
+                    final_streak = user_post['streak'] - 1
+                    if user_post['streak'] == user_post['high']:
+                        classic_collection.update_one(
                             {
-                                "wrong":1,
-                                "correct":-1
-                            },
-                            "$set":
-                            {
-                                "streak":1
+                                "_id":user_id
+                            }, {
+                                "$inc":
+                                {
+                                    "high":-1,
+                                    "wrong":1,
+                                    "correct":-1
+                                },
+                                "$set":
+                                {
+                                    "streak":0
+                                }
                             }
-                        }
-                    )
+                        )
+                    else:
+                        classic_collection.update_one(
+                            {"_id":user_id},
+                            {
+                                "$inc":
+                                {
+                                    "wrong":1,
+                                    "correct":-1
+                                },
+                                "$set":
+                                {
+                                    "streak":1
+                                }
+                            }
+                        )
                 mode="2"
             # elif channel == abc_channel and author.id == abc_bot:
             #     user_post = abc_collection.find_one(
@@ -726,9 +971,8 @@ async def on_message(message):
                 return
             else:
                 return
-            final_streak = user_post['streak']-1
             scores = bot.get_channel(bot_channel)
-            msg = f"**{message.mentions[0].display_name}**'s streak with "
+            msg = f"**{user.display_name}**'s streak with "
             msg += f"{mode_list[mode]} has been reset from "
             msg += f"**{final_streak}** to 0"
             embedVar = Embed(
@@ -737,6 +981,7 @@ async def on_message(message):
                 color=color_lamuse
             )
             await scores.send(embed=embedVar)
+    """If mistake is made in numselli bot"""
 
     """All functions related to og bot"""
     if author.id == og_bot:
@@ -1317,6 +1562,115 @@ async def on_message(message):
                     #         await message.channel.send(msg)
                     #     else:
                     #         await message.add_reaction("❌")
+            if re.match("Save Used", embed_content['title']):
+                nums = re.findall("[\d.]+", embed_content['description'])
+                user_id = int(nums[0])
+                current_saves = float(nums[2])
+                user = guild.get_member(userID)
+                user_post = numselli_collection.find_one(
+                    {
+                        "_id":user_id
+                    }, {
+                        "streak":1,
+                        "high":1,
+                        "alt":1
+                    }
+                )
+                if "alt" in user_post:
+                    user_main = user_post["alt"]
+                    user = guild.get_member(user_main)
+                    user_post2 = numselli_collection.find_one(
+                        {
+                            "_id":user_main
+                        }, {
+                            "streak":1,
+                            "high":1
+                        }
+                    )
+                    final_streak = user_post2["streak"] - 1
+                    if user_post2['streak'] == user_post2['high']:
+                        numselli_collection.update_one(
+                            {
+                                "_id":user_main
+                            }, {
+                                "$inc":
+                                {
+                                    "high":-1
+                                },
+                                "$set":
+                                {
+                                    "streak":0
+                                }
+                            }
+                        )
+                    else:
+                        numselli_collection.update_one(
+                            {
+                                "_id":user_main
+                            }, {
+                                "$set":
+                                {
+                                    "streak":0
+                                }
+                            }
+                        )
+                    numselli_collection.update_one(
+                        {
+                            "_id":user_id
+                        }, {
+                            "$inc":
+                            {
+                                "correct":-1,
+                                "wrong":1
+                            }
+                        }
+                    )
+                else:
+                    final_streak = user_post['streak'] - 1
+                    if user_post['streak'] == user_post['high']:
+                        numselli_collection.update_one(
+                            {
+                                "_id":user_id
+                            }, {
+                                "$inc":
+                                {
+                                    "high":-1,
+                                    "wrong":1,
+                                    "correct":-1
+                                },
+                                "$set":
+                                {
+                                    "streak":0
+                                }
+                            }
+                        )
+                    else:
+                        numselli_collection.update_one(
+                            {
+                                "_id":user_id
+                            }, {
+                                "$inc":
+                                {
+                                    "wrong":1,
+                                    "correct":-1
+                                },
+                                "$set":
+                                {
+                                    "streak":1
+                                }
+                            }
+                        )
+                mode="5"
+                scores = bot.get_channel(bot_channel)
+                msg = f"**{user.display_name}**'s streak with "
+                msg += f"{mode_list[mode]} has been reset from "
+                msg += f"**{final_streak}** to 0"
+                embedVar = Embed(
+                    title="Streak Ruined",
+                    description=msg,
+                    color=color_lamuse
+                )
+                await scores.send(embed=embedVar)
 
     """For generating the next prime number"""
     if channel == prime_channel and re.match("\d", content):
