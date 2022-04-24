@@ -165,8 +165,8 @@ class Stats(commands.Cog):
         #         {'name':1,'streak':1,'_id':0}
         #     ).sort("streak",-1).skip(i).limit(10)
         #     title_msg = "Current streaks for abc counting"
-        elif mode == "numseli":
-            counter_cursor = numselli_collection.find_one(
+        elif mode == "numselli":
+            counter_cursor = numselli_collection.find(
                 {"streak":{"$gte":1}},
                 {"name":1,"streak":1,"_id":0}
             ).sort("streak",-1).skip(i).limit(10)
@@ -180,6 +180,7 @@ class Stats(commands.Cog):
             msg += f"{i}. {name} - {streak}\n"
         if msg!="":
             embedVar = Embed(title=title_msg,description=msg,color=color_lamuse)
+            embedVar.set_footer(text=f"Page: {page}")
             await ctx.send(embed=embedVar)
         else:
             return
@@ -188,7 +189,7 @@ class Stats(commands.Cog):
     async def slash_currentscore(self, ctx,
             mode:Option(str,
                 description="Leaderboard mode",
-                choices=["og","classic"]),#'abc'
+                choices=["og","classic","numselli"]),#'abc'
             page:Option(int,
                 description="The page number of the leaderboard")=1):
         """Shows the streak currentscores"""
@@ -204,8 +205,8 @@ class Stats(commands.Cog):
                 for counter in counter_cursor:
                     i+=1
                     name = counter.get('name',"Unknown")
-                    high = counter.get('high',0)
-                    msg += f"{i}. {name} - {high}\n"
+                    streak = counter.get('streak',0)
+                    msg += f"{i}. {name} - {streak}\n"
                 if msg=="":
                     counter_num = og_collection.count_documents(
                         {
@@ -227,8 +228,8 @@ class Stats(commands.Cog):
                 for counter in counter_cursor:
                     i+=1
                     name = counter.get('name',"Unknown")
-                    high = counter.get('high',0)
-                    msg += f"{i}. {name} - {high}\n"
+                    streak = counter.get('streak',0)
+                    msg += f"{i}. {name} - {streak}\n"
                 if msg=="":
                     counter_num = classic_collection.count_documents(
                         {
@@ -264,17 +265,17 @@ class Stats(commands.Cog):
             title_msg = "Current streaks for numselli counting"
             while msg == "":
                 i = (page - 1) * 10
-                counter_cursor = classic_collection.find(
+                counter_cursor = numselli_collection.find(
                     {'streak':{"$gte":1}},
                     {'name':1,'streak':1,'_id':0}
                 ).sort("streak",-1).skip(i).limit(10)
                 for counter in counter_cursor:
                     i+=1
                     name = counter.get('name',"Unknown")
-                    high = counter.get('high',0)
-                    msg += f"{i}. {name} - {high}\n"
+                    streak = counter.get('streak',0)
+                    msg += f"{i}. {name} - {streak}\n"
                 if msg=="":
-                    counter_num = classic_collection.count_documents(
+                    counter_num = numselli_collection.count_documents(
                         {
                             'streak':
                             {
@@ -298,13 +299,13 @@ class Stats(commands.Cog):
         msg = ""
         if mode == "og":
             counter_cursor = og_collection.find(
-                {"streak":{"$gte":1}},
+                {"high":{"$gte":1}},
                 {'name':1,'high':1,'_id':0}
             ).sort("high",-1).skip(i).limit(10)
             title_msg = "Highest streaks for og counting"
         elif mode == "classic":
             counter_cursor = classic_collection.find(
-                {"streak":{"$gte":1}},
+                {"high":{"$gte":1}},
                 {'name':1,'high':1,'_id':0}
             ).sort("high",-1).skip(i).limit(10)
             title_msg = "Highest streaks for classic counting"
@@ -314,10 +315,10 @@ class Stats(commands.Cog):
         #         {'name':1,'high':1,'_id':0}
         #     ).sort("high",-1).skip(i).limit(10)
         #     title_msg = "Highest streaks for abc counting"
-        elif mode == "numseli":
-            counter_cursor = numselli_collection.find_one(
-                {"streak":{"$gte":1}},
-                {"name":1,"streak":1,"_id":0}
+        elif mode == "numselli":
+            counter_cursor = numselli_collection.find(
+                {"high":{"$gte":1}},
+                {"name":1,"high":1,"_id":0}
             ).sort("high",-1).skip(i).limit(10)
             title_msg = "Highest Streaks for numselli counting"
         else:
@@ -329,6 +330,7 @@ class Stats(commands.Cog):
             msg += f"{i}. {name} - {high}\n"
         if msg!="":
             embedVar = Embed(title=title_msg,description=msg,color=color_lamuse)
+            embedVar.set_footer(text=f"Page: {page}")
             await ctx.send(embed=embedVar)
         else:
             return
@@ -337,7 +339,7 @@ class Stats(commands.Cog):
     async def slash_leaderboard(self, ctx,
             mode:Option(str,
                 description="Leaderboard type",
-                choices=["og","classic"]),#'abc'
+                choices=["og","classic","numselli"]),#'abc'
             page:Option(int,
                 description="The page number of the leaderboard")=1):
         """Shows the streak highscores"""
