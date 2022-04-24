@@ -156,5 +156,18 @@ class Reminders(commands.Cog):
             msg = f"<@{userID}> will not get reminders in dank memer"
             await ctx.send(msg)
 
+    @commands.command()
+    async def duckregister(self, ctx):
+        """Register for duck hunt reminders"""
+        guild:discord.Guild = ctx.guild
+        user:discord.Member = ctx.author
+        hunter = guild.get_role(hunter_id)
+        if hunter not in user.roles:
+            await user.add_roles(hunter)
+            await ctx.respond("You will now get pings when ducks appear")
+        else:
+            await user.remove_roles(hunter)
+            await ctx.respond("You will not get pings when ducks appear")
+
 def setup(bot:commands.Bot):
     bot.add_cog(Reminders(bot))

@@ -180,7 +180,7 @@ class Vote(commands.Cog):
         await ctx.send(msg)
 
 @bot.event
-async def on_message(message):
+async def on_message(message:discord.Message):
     if message.author == bot.user: #ignores if message from bot
         return
 
@@ -1772,6 +1772,12 @@ async def on_message(message):
             # ID = message.reference.message_id
             # print(ID)
             # print(guild.get_message(ID))
+
+    if channel == duck_channel:
+        if author.id == duck_bot:
+            if re.match("\-\,", content):
+                await message.channel.send(f"<@&{hunter_id}> ducks are here")
+            pass
 
     """Functions related to user input"""
     if re.match("c!user",content,re.I):
