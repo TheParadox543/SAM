@@ -557,13 +557,13 @@ class AdminCommands(commands.Cog, name="Admin Commands"):
             reason:typing.Literal['cooldown','offline']):
         """Locks the channel manually. You need to have necessary permissions"""
         if bot_name == "og":
-            channel = bot.get_channel(og_channel)
+            channel = self.bot.get_channel(og_channel)
             role:dRole = ctx.guild.get_role(og_save_id)
         elif bot_name == "classic":
-            channel = bot.get_channel(classic_channel)
+            channel = self.bot.get_channel(classic_channel)
             role:dRole = ctx.guild.get_role(countaholic_id)
         elif bot_name == "abc":
-            channel = bot.get_channel(abc_channel)
+            channel = self.bot.get_channel(abc_channel)
             role:dRole = ctx.guild.get_role(abc_save_id)
         else:
             return
@@ -617,13 +617,13 @@ class AdminCommands(commands.Cog, name="Admin Commands"):
             bot_name:typing.Literal['og','classic','abc']):
         """Unlocks the channels manually. You need to have necessary permissions"""
         if bot_name == "og":
-            channel = bot.get_channel(og_channel)
+            channel = self.bot.get_channel(og_channel)
             role:dRole = ctx.guild.get_role(og_save_id)
         elif bot_name == "classic":
-            channel = bot.get_channel(classic_channel)
+            channel = self.bot.get_channel(classic_channel)
             role:dRole = ctx.guild.get_role(countaholic_id)
         elif bot_name == "abc":
-            channel = bot.get_channel(abc_channel)
+            channel = self.bot.get_channel(abc_channel)
             role:dRole = ctx.guild.get_role(abc_save_id)
         else:
             return
