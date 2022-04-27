@@ -1,4 +1,3 @@
-from aifc import Error
 import discord 
 from discord import Embed, Option, TextChannel, Role as dRole, Member as dMember
 from discord.ext import commands, tasks
@@ -81,6 +80,7 @@ async def on_ready():
     """To log when the bot is ready for use"""
     await bot.change_presence(activity=discord.Game("?help"))
     check_time.start()
+    daily.start()
     print(f"We have logged in as {bot.user}")
 
 @bot.slash_command(name="prime", guild_ids=servers)
@@ -201,99 +201,103 @@ async def on_message(message:discord.Message):
         if channel == og_channel and re.match("\d", number_str):
             try:
                 number = int(number_str)
-                if number == 0:
-                    pass
-                user_post:dict = og_collection.find_one(
-                    {
-                        "_id":user_id
-                    }, {
-                        "streak":1,
-                        "high":1,
-                        "alt":1
-                    }
-                )
-                if user_post:
-                    if "alt" in user_post:
-                        user_main = user_post.get("alt")
-                        user = guild.get_member(user_main)
-                        user_post2:dict = og_collection.find_one(
+            except:
+                return
+            if number == 0:
+                pass
+            user_post:dict = og_collection.find_one(
+                {
+                    "_id":user_id
+                }, {
+                    "streak":1,
+                    "high":1,
+                    "alt":1
+                }
+            )
+            if user_post:
+                if "alt" in user_post:
+                    user_main = user_post.get("alt")
+                    user = guild.get_member(user_main)
+                    user_post2:dict = og_collection.find_one(
+                        {
+                            "_id":user_main
+                        }, {
+                            "streak":1,
+                            "high":1
+                        }
+                    )
+                    if user_post2['streak'] == user_post2['high']:
+                        og_collection.update_one(
                             {
                                 "_id":user_main
                             }, {
-                                "streak":1,
-                                "high":1
+                                "$inc":
+                                {
+                                    "streak":1,
+                                    "high":1,
+                                    "daily":1
+                                }
                             }
                         )
-                        if user_post2['streak'] == user_post2['high']:
-                            og_collection.update_one(
+                        if (user_post2['streak']+1)%500==0:
+                            msg_s = f"n{(user_post2['streak']+1)}"
+                    else:
+                        og_collection.update_one(
+                            {
+                                "_id":user_main
+                            }, {
+                                "$inc":
                                 {
-                                    "_id":user_main
-                                }, {
-                                    "$inc":
-                                    {
-                                        "streak":1,
-                                        "high":1,
-                                    }
+                                    "streak":1,
+                                    "daily":1
                                 }
-                            )
-                            if (user_post2['streak']+1)%500==0:
-                                msg_s = f"n{(user_post2['streak']+1)}"
-                        else:
-                            og_collection.update_one(
-                                {
-                                    "_id":user_main
-                                }, {
-                                    "$inc":
-                                    {
-                                        "streak":1
-                                    }
-                                }
-                            )
-                            if (user_post2['streak']+1)%500==0:
-                                msg_s = f"{(user_post2['streak']+1)}"
+                            }
+                        )
+                        if (user_post2['streak']+1)%500==0:
+                            msg_s = f"{(user_post2['streak']+1)}"
+                    og_collection.update_one(
+                        {
+                            "_id":user_id
+                        }, {
+                            "$inc":
+                            {
+                                "correct":1
+                            }
+                        }
+                    )
+                else:
+                    if user_post['streak'] == user_post['high']:
                         og_collection.update_one(
                             {
                                 "_id":user_id
                             }, {
                                 "$inc":
                                 {
-                                    "correct":1
+                                    "streak":1,
+                                    "high":1,
+                                    "correct":1,
+                                    "daily":1
                                 }
                             }
                         )
+                        if (user_post['streak']+1)%500==0:
+                            msg_s = f"n{(user_post['streak']+1)}"
                     else:
-                        if user_post['streak'] == user_post['high']:
-                            og_collection.update_one(
+                        og_collection.update_one(
+                            {
+                                "_id":user_id
+                            }, {
+                                "$inc":
                                 {
-                                    "_id":user_id
-                                }, {
-                                    "$inc":
-                                    {
-                                        "streak":1,
-                                        "high":1,
-                                        "correct":1
-                                    }
+                                    "streak":1,
+                                    "correct":1,
+                                    "daily":1
                                 }
-                            )
-                            if (user_post['streak']+1)%500==0:
-                                msg_s = f"n{(user_post['streak']+1)}"
-                        else:
-                            og_collection.update_one(
-                                {
-                                    "_id":user_id
-                                }, {
-                                    "$inc":
-                                    {
-                                        "streak":1,
-                                        "correct":1
-                                    }
-                                }
-                            )
-                            if (user_post['streak']+1)%500==0:
-                                msg_s = f"{(user_post['streak']+1)}"
-                    mode = "1"
-            except:
-                return
+                            }
+                        )
+                        if (user_post['streak']+1)%500==0:
+                            msg_s = f"{(user_post['streak']+1)}"
+                mode = "1"
             run_time = time_collection.find_one({"_id":"run"})
             time_now = message.created_at.replace(tzinfo=None,microsecond=0)
             time_diff = time_now - run_time["time_last"]
@@ -324,110 +328,110 @@ async def on_message(message:discord.Message):
         elif channel == classic_channel and re.match("\d", number_str):
             try:
                 number = int(number_str)
-                if number == 0:
-                    pass
-                user_post = classic_collection.find_one(
-                    {
-                        "_id":user_id
-                    }, {
-                        "streak":1,
-                        "high":1,
-                        "alt":1
-                    }
-                )
-                if user_post:
-                    if "alt" in user_post:
-                        user_main = user_post.get("alt")
-                        user = guild.get_member(user_main)
-                        user_post2:dict = classic_collection.find_one(
+            except:
+                return
+            if number == 0:
+                pass
+            user_post = classic_collection.find_one(
+                {
+                    "_id":user_id
+                }, {
+                    "streak":1,
+                    "high":1,
+                    "alt":1
+                }
+            )
+            if user_post:
+                if "alt" in user_post:
+                    user_main = user_post.get("alt")
+                    user = guild.get_member(user_main)
+                    user_post2:dict = classic_collection.find_one(
+                        {
+                            "_id":user_main
+                        }, {
+                            "streak":1,
+                            "high":1
+                        }
+                    )
+                    if user_post2['streak'] == user_post2['high']:
+                        classic_collection.update_one(
                             {
                                 "_id":user_main
                             }, {
-                                "streak":1,
-                                "high":1
+                                "$inc":
+                                {
+                                    "streak":1,
+                                    "high":1,
+                                }
                             }
                         )
-                        if user_post2['streak'] == user_post2['high']:
-                            classic_collection.update_one(
+                        if (user_post2['streak']+1)%500==0:
+                            msg_s = f"n{(user_post2['streak']+1)}"
+                    else:
+                        classic_collection.update_one(
+                            {
+                                "_id":user_main
+                            }, {
+                                "$inc":
                                 {
-                                    "_id":user_main
-                                }, {
-                                    "$inc":
-                                    {
-                                        "streak":1,
-                                        "high":1,
-                                    }
+                                    "streak":1
                                 }
-                            )
-                            if (user_post2['streak']+1)%500==0:
-                                msg_s = f"n{(user_post2['streak']+1)}"
-                        else:
-                            classic_collection.update_one(
-                                {
-                                    "_id":user_main
-                                }, {
-                                    "$inc":
-                                    {
-                                        "streak":1
-                                    }
-                                }
-                            )
-                            if (user_post2['streak']+1)%500==0:
-                                msg_s = f"{(user_post2['streak']+1)}"
+                            }
+                        )
+                        if (user_post2['streak']+1)%500==0:
+                            msg_s = f"{(user_post2['streak']+1)}"
+                    classic_collection.update_one(
+                        {
+                            "_id":user_id
+                        }, {
+                            "$inc":
+                            {
+                                "correct":1
+                            }
+                        }
+                    )
+                else:
+                    if user_post['streak'] == user_post['high']:
                         classic_collection.update_one(
                             {
                                 "_id":user_id
                             }, {
                                 "$inc":
                                 {
+                                    "streak":1,
+                                    "high":1,
                                     "correct":1
                                 }
                             }
                         )
+                        if (user_post['streak']+1)%500==0:
+                            msg_s = f"n{(user_post['streak']+1)}"
                     else:
-                        if user_post['streak'] == user_post['high']:
-                            classic_collection.update_one(
+                        classic_collection.update_one(
+                            {
+                                "_id":user_id
+                            }, {
+                                "$inc":
                                 {
-                                    "_id":user_id
-                                }, {
-                                    "$inc":
-                                    {
-                                        "streak":1,
-                                        "high":1,
-                                        "correct":1
-                                    }
+                                    "streak":1,
+                                    "correct":1
                                 }
-                            )
-                            if (user_post['streak']+1)%500==0:
-                                msg_s = f"n{(user_post['streak']+1)}"
-                        else:
-                            classic_collection.update_one(
-                                {
-                                    "_id":user_id
-                                }, {
-                                    "$inc":
-                                    {
-                                        "streak":1,
-                                        "correct":1
-                                    }
-                                }
-                            )
-                            if (user['streak']+1)%500==0:
-                                msg_s = f"{(user_post['streak']+1)}"
-                        mode = "2"
-                else:
-                    classic_collection.insert_one(
-                        {
-                            "_id":user_id,
-                            "name":f"{author}",
-                            "correct":1,
-                            "wrong":0,
-                            "streak":1,
-                            "high":1
-                        }
-                    )
-            except:
-                return
+                            }
+                        )
+                        if (user_post['streak']+1)%500==0:
+                            msg_s = f"{(user_post['streak']+1)}"
+                mode = "2"
+            else:
+                classic_collection.insert_one(
+                    {
+                        "_id":user_id,
+                        "name":f"{author}",
+                        "correct":1,
+                        "wrong":0,
+                        "streak":1,
+                        "high":1
+                    }
+                )
         # elif channel == abc_channel and re.match("[a-zA-Z]", number_str):
         #     number = letter_calc(number_str)
         #     if abc_collection.find_one({"_id":user_id}):
@@ -657,16 +661,6 @@ async def on_message(message:discord.Message):
                     time = int(message.created_at.timestamp())
                     if channel == og_channel \
                             or channel == numselli_channels["whole"]:
-                        if number == 1_000_000:
-                            msg = "**WE HIT A** __***MILLION***__ at "
-                            msg += f"<t:{time}:F>!!! **SUPERB WORK EVERYONE**\n"
-                            msg += "**LET'S KEEP IT GOING**"
-                            await milestone.send(msg)
-                            msg = ""
-                            for emoji in emoji_list:
-                                msg += f"{emoji} "
-                            await milestone.send(msg)
-                            return
                         sen = ""
                         while(len(number_str)>0):
                             sen = number_str[-3:] + sen
@@ -749,7 +743,8 @@ async def on_message(message:discord.Message):
                             }, {
                                 "$inc":
                                 {
-                                    "high":-1
+                                    "high":-1,
+                                    "daily":-1
                                 },
                                 "$set":
                                 {
@@ -762,6 +757,10 @@ async def on_message(message:discord.Message):
                             {
                                 "_id":user_main
                             }, {
+                                "$inc":
+                                {
+                                    "daily":-1
+                                },
                                 "$set":
                                 {
                                     "streak":0
@@ -792,7 +791,8 @@ async def on_message(message:discord.Message):
                                     "high":-1,
                                     "wrong":1,
                                     "correct":-1,
-                                    "current_saves":-1
+                                    "current_saves":-1,
+                                    "daily":-1
                                 },
                                 "$set":
                                 {
@@ -809,7 +809,8 @@ async def on_message(message:discord.Message):
                                 {
                                     "wrong":1,
                                     "correct":-1,
-                                    "current_saves":-1
+                                    "current_saves":-1,
+                                    "daily":-1
                                 },
                                 "$set":
                                 {
@@ -817,7 +818,7 @@ async def on_message(message:discord.Message):
                                 }
                             }
                         )
-                    mode="1" 
+                mode="1" 
             elif channel == classic_channel and author.id == classic_bot:
                 user_post = classic_collection.find_one(
                     {
@@ -1566,7 +1567,7 @@ async def on_message(message:discord.Message):
                 nums = re.findall("[\d.]+", embed_content['description'])
                 user_id = int(nums[0])
                 current_saves = float(nums[2])
-                user = guild.get_member(userID)
+                user = guild.get_member(user_id)
                 user_post = numselli_collection.find_one(
                     {
                         "_id":user_id
@@ -1768,16 +1769,12 @@ async def on_message(message:discord.Message):
                                         "command":"go to work"
                                     }
                                 )
-            # print(dir(message.reference))
-            # ID = message.reference.message_id
-            # print(ID)
-            # print(guild.get_message(ID))
 
-    if channel == duck_channel:
-        if author.id == duck_bot:
-            if re.match("\-\,", content):
-                await message.channel.send(f"<@&{hunter_id}> ducks are here")
-            pass
+    # if channel == duck_channel:
+    #     if author.id == duck_bot:
+    #         if re.match("\-", content):
+    #             await message.channel.send(f"<@&{hunter_id}> ducks are here")
+    #         pass
 
     """Functions related to user input"""
     if re.match("c!user",content,re.I):
@@ -1961,6 +1958,31 @@ async def check_time():
             command = cursor['command']
             await dank_chnl.send(f"<@{user}> time to {command}")
             dank_collection.delete_one(cursor)
+
+@tasks.loop(time=time(hour=23,minute=59,second=59,tzinfo=None))
+async def daily():
+    time = datetime.utcnow().isoformat()[:10]
+    cursor = og_collection.find(
+        {
+            "daily":
+            {
+                "$gte":1
+            }
+        }, {
+            "name":1,
+            "daily":1
+        }
+    ).sort("daily", -1)
+    msg = ""
+    i = 0
+    for user in cursor:
+        i += 1 
+        name = user.get("name","Unknown")
+        daily = user.get("daily",">1")
+        msg += f"\n{i}. {name} - {daily}"
+    embedVar = Embed(title=f"{time}",description=msg,color=color_lamuse)
+    scores:TextChannel = bot.get_channel(bot_channel)
+    await scores.send(embed=embedVar)
 
 r = requests.head(url="https://discord.com/api/v1")
 try:

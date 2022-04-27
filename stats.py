@@ -27,12 +27,10 @@ class Stats(commands.Cog):
         embedVar.set_thumbnail(url=user.display_avatar)
         user_post = og_collection.find_one({"_id":user.id})
         if user_post:
-            correct = user_post['correct']
-            if 'wrong' in user_post:
-                wrong = user_post['wrong']
-            else:
-                wrong = 0
+            correct = user_post.get('correct',0)
+            wrong = user_post.get('wrong',0)
             total = correct + wrong
+            daily = user_post.get('daily',0)
             if total == 0:
                 rate = 0
             else:
@@ -48,14 +46,12 @@ class Stats(commands.Cog):
             msg += f"\nSaves: {current_saves}/{user_post['total_saves']}"
             msg += f"\n\nCurrent Streak: {user_post['streak']}"
             msg += f"\nHighest Streak: {user_post['high']}"
+            msg += f"\nDaily: {daily}" 
             embedVar.add_field(name=mode_list["1"],value=msg)
         user_post = classic_collection.find_one({"_id":user.id})
         if user_post:
             correct = user_post['correct']
-            if 'wrong' in user_post:
-                wrong = user_post['wrong']
-            else:
-                wrong = 0
+            wrong = user_post.get('wrong',0)
             total = correct + wrong
             if total == 0:
                 rate = 0
@@ -71,10 +67,7 @@ class Stats(commands.Cog):
         # user_post = abc_collection.find_one({"_id":user.id})
         # if user_post:
         #     correct = user_post['correct']
-        #     if 'wrong' in user_post:
-        #         wrong = user_post['wrong']
-        #     else:
-        #         wrong = 0
+        #     wrong = user_post.get('wrong',0)
         #     total = correct + wrong
         #     if total == 0:
         #         rate = 0
@@ -95,10 +88,7 @@ class Stats(commands.Cog):
         user_post = beta_collection.find_one({"_id":user.id})
         if user_post:
             correct = user_post['correct']
-            if 'wrong' in user_post:
-                wrong = user_post['wrong']
-            else:
-                wrong = 0
+            wrong = user_post.get('wrong',0)
             total = correct + wrong
             if total == 0:
                 rate = 0
@@ -117,10 +107,7 @@ class Stats(commands.Cog):
         user_post = numselli_collection.find_one({"_id":user.id})
         if user_post:
             correct = user_post['correct']
-            if 'wrong' in user_post:
-                wrong = user_post['wrong']
-            else:
-                wrong = 0
+            wrong = user_post.get('wrong',0)
             total = correct + wrong
             if total == 0:
                 rate = 0
@@ -145,18 +132,34 @@ class Stats(commands.Cog):
             mode:typing.Literal["og", "classic", "numselli"],
             page:int=1):
         """Shows the streak currentscores"""
-        i=(page-1)*10
+        i = (page-1) * 10
         msg = ""
         if mode == "og":
             counter_cursor = og_collection.find(
-                {"streak":{"$gte":1}},
-                {'name':1,'streak':1,'_id':0}
+                {
+                    "streak":
+                    {
+                        "$gte":1
+                    }
+                }, {
+                    'name':1,
+                    'streak':1,
+                    '_id':0
+                }
             ).sort("streak",-1).skip(i).limit(10)
             title_msg = "Current streaks for og counting"
         elif mode == "classic":
             counter_cursor = classic_collection.find(
-                {"streak":{"$gte":1}},
-                {'name':1,'streak':1,'_id':0}
+                {
+                    "streak":
+                    {
+                        "$gte":1
+                    }
+                }, {
+                    'name':1,
+                    'streak':1,
+                    '_id':0
+                }
             ).sort("streak",-1).skip(i).limit(10)
             title_msg = "Current streaks for classic counting"
         # elif mode == "abc":
@@ -167,8 +170,16 @@ class Stats(commands.Cog):
         #     title_msg = "Current streaks for abc counting"
         elif mode == "numselli":
             counter_cursor = numselli_collection.find(
-                {"streak":{"$gte":1}},
-                {"name":1,"streak":1,"_id":0}
+                {
+                    "streak":
+                    {
+                        "$gte":1
+                    }
+                }, {
+                    "name":1,
+                    "streak":1,
+                    "_id":0
+                }
             ).sort("streak",-1).skip(i).limit(10)
             title_msg = "Current Streaks for numselli counting"
         else:
@@ -199,8 +210,16 @@ class Stats(commands.Cog):
             while msg == "":
                 i = (page - 1) * 10
                 counter_cursor = og_collection.find(
-                    {'streak':{"$gte":1}},
-                    {'name':1,'streak':1,'_id':0}
+                    {
+                        'streak':
+                        {
+                            "$gte":1
+                        }
+                    }, {
+                        'name':1,
+                        'streak':1,
+                        '_id':0
+                    }
                 ).sort("streak",-1).skip(i).limit(10)
                 for counter in counter_cursor:
                     i+=1
@@ -222,8 +241,16 @@ class Stats(commands.Cog):
             while msg == "":
                 i = (page - 1) * 10
                 counter_cursor = classic_collection.find(
-                    {'streak':{"$gte":1}},
-                    {'name':1,'streak':1,'_id':0}
+                    {
+                        'streak':
+                        {
+                            "$gte":1
+                        }
+                    }, {
+                        'name':1,
+                        'streak':1,
+                        '_id':0
+                    }
                 ).sort("streak",-1).skip(i).limit(10)
                 for counter in counter_cursor:
                     i+=1
@@ -266,8 +293,16 @@ class Stats(commands.Cog):
             while msg == "":
                 i = (page - 1) * 10
                 counter_cursor = numselli_collection.find(
-                    {'streak':{"$gte":1}},
-                    {'name':1,'streak':1,'_id':0}
+                    {
+                        'streak':
+                        {
+                            "$gte":1
+                        }
+                    }, {
+                        'name':1,
+                        'streak':1,
+                        '_id':0
+                    }
                 ).sort("streak",-1).skip(i).limit(10)
                 for counter in counter_cursor:
                     i+=1
@@ -299,14 +334,30 @@ class Stats(commands.Cog):
         msg = ""
         if mode == "og":
             counter_cursor = og_collection.find(
-                {"high":{"$gte":1}},
-                {'name':1,'high':1,'_id':0}
+                {
+                    "high":
+                    {
+                        "$gte":1
+                    }
+                }, {
+                    'name':1,
+                    'high':1,
+                    '_id':0
+                }
             ).sort("high",-1).skip(i).limit(10)
             title_msg = "Highest streaks for og counting"
         elif mode == "classic":
             counter_cursor = classic_collection.find(
-                {"high":{"$gte":1}},
-                {'name':1,'high':1,'_id':0}
+                {
+                    "high":
+                    {
+                        "$gte":1
+                    }
+                }, {
+                    'name':1,
+                    'high':1,
+                    '_id':0
+                }
             ).sort("high",-1).skip(i).limit(10)
             title_msg = "Highest streaks for classic counting"
         # elif mode == 3:
@@ -317,8 +368,16 @@ class Stats(commands.Cog):
         #     title_msg = "Highest streaks for abc counting"
         elif mode == "numselli":
             counter_cursor = numselli_collection.find(
-                {"high":{"$gte":1}},
-                {"name":1,"high":1,"_id":0}
+                {
+                    "high":
+                    {
+                        "$gte":1
+                    }
+                }, {
+                    "name":1,
+                    "high":1,
+                    "_id":0
+                }
             ).sort("high",-1).skip(i).limit(10)
             title_msg = "Highest Streaks for numselli counting"
         else:
@@ -349,8 +408,16 @@ class Stats(commands.Cog):
             while msg == "":
                 i = (page - 1) * 10
                 counter_cursor = og_collection.find(
-                    {'high':{"$gte":1}},
-                    {'name':1,'high':1,'_id':0}
+                    {
+                        'high':
+                        {
+                            "$gte":1
+                        }
+                    }, {
+                        'name':1,
+                        'high':1,
+                        '_id':0
+                    }
                 ).sort("high",-1).skip(i).limit(10)
                 for counter in counter_cursor:
                     i+=1
@@ -372,8 +439,16 @@ class Stats(commands.Cog):
             while msg == "":
                 i = (page - 1) * 10
                 counter_cursor = classic_collection.find(
-                    {'high':{"$gte":1}},
-                    {'name':1,'high':1,'_id':0}
+                    {
+                        'high':
+                        {
+                            "$gte":1
+                        }
+                    }, {
+                        'name':1,
+                        'high':1,
+                        '_id':0
+                    }
                 ).sort("high",-1).skip(i).limit(10)
                 for counter in counter_cursor:
                     i+=1
@@ -416,8 +491,16 @@ class Stats(commands.Cog):
             while msg == "":
                 i = (page - 1) * 10
                 counter_cursor = numselli_collection.find(
-                    {'high':{"$gte":1}},
-                    {'name':1,'high':1,'_id':0}
+                    {
+                        'high':
+                        {
+                            "$gte":1
+                        }
+                    }, {
+                        'name':1,
+                        'high':1,
+                        '_id':0
+                    }
                 ).sort("high",-1).skip(i).limit(10)
                 for counter in counter_cursor:
                     i+=1
@@ -447,8 +530,12 @@ class Stats(commands.Cog):
         msg = ""
         
         user_post:dict = og_collection.find_one(
-            {"_id":user.id},
-            {"correct":1,"wrong":1}
+            {
+                "_id":user.id
+            }, {
+                "correct":1,
+                "wrong":1
+            }
         )
         if user_post:
             correct = user_post['correct']
@@ -466,8 +553,12 @@ class Stats(commands.Cog):
                 msg += f"`counting`: Rank up to {new_rate}% at **{new_cor}**. "
                 msg += f"You need ~**{x}** more numbers.\n"
         user_post = classic_collection.find_one(
-            {"_id":user.id},
-            {"correct":1,"wrong":1}
+            {
+                "_id":user.id
+            }, {
+                "correct":1,
+                "wrong":1
+            }
         )
         if user_post:
             correct = user_post['correct']
@@ -506,8 +597,12 @@ class Stats(commands.Cog):
         #         msg += f"`abc`: Rank up to {new_rate}% at **{new_cor}**. "
         #         msg += f"You need ~**{x}** more numbers.\n"
         user_post = beta_collection.find_one(
-            {"_id":user.id},
-            {"correct":1,"wrong":1}
+            {
+                "_id":user.id
+            }, {
+                "correct":1,
+                "wrong":1
+            }
         )
         if user_post:
             correct = user_post['correct']
@@ -525,8 +620,12 @@ class Stats(commands.Cog):
                 msg += f"`alphabeta`: Rank up to {new_rate}% at **{new_cor}**. "
                 msg += f"You need ~**{x}** more numbers.\n"
         user_post = numselli_collection.find_one(
-            {"_id":user.id},
-            {"correct":1,"wrong":1}
+            {
+                "_id":user.id
+            }, {
+                "correct":1,
+                "wrong":1
+            }
         )
         if user_post:
             correct = user_post['correct']
