@@ -56,8 +56,8 @@ numselli_channels = {
 }
 prime_bot = 754680630037577859
 prime_channel = 893234574300172358
-sasha_bot = 862060226798682174
-sasha_channel = 893237900257419304
+# sasha_bot = 862060226798682174
+# sasha_channel = 893237900257419304
 scores_channel = 898287795733417984
 bot_channel = 892731445376860241
 mile_channel = 929606005535408159
@@ -2619,7 +2619,7 @@ async def on_message(message):
     await bot.process_commands(message)
 
 @bot.event
-async def on_presence_update(member_old,member_new):
+async def on_presence_update(member_old:Member, member_new:Member):
     if member_new.bot == False:
         return
     if member_new.raw_status == member_old.raw_status:
@@ -2645,8 +2645,8 @@ async def on_presence_update(member_old,member_new):
             return
         channel = bot.get_channel(prime_channel)
         role:dRole = member_new.guild.get_role(countaholic_id)
-    elif member_new.id == sasha_bot:
-        channel = bot.get_channel(sasha_channel)
+    # elif member_new.id == sasha_bot:
+    #     channel = bot.get_channel(sasha_channel)
         role:dRole = member_new.guild.get_role(countaholic_id)
     elif member_new.id == numselli_bot :
         role:dRole = member_new.guild.get_role(have_save_id)
