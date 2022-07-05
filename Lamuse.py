@@ -56,8 +56,8 @@ numselli_channels = {
 }
 prime_bot = 754680630037577859
 prime_channel = 893234574300172358
-# sasha_bot = 862060226798682174
-# sasha_channel = 893237900257419304
+sasha_bot = 862060226798682174
+sasha_channel = 893237900257419304
 scores_channel = 898287795733417984
 bot_channel = 892731445376860241
 mile_channel = 929606005535408159
@@ -1660,9 +1660,6 @@ async def on_message(message):
                 return
         else: 
             return
-        rev_num = number_str[::-1]
-        if rev_num == number_str:
-            await message.add_reaction("↔️")
         if number%100 == 0 and number!=0:
             if number%500 == 0:
                 if number%1000 == 0 and channel != classic_channel:
@@ -2648,8 +2645,8 @@ async def on_presence_update(member_old:Member, member_new:Member):
             return
         channel = bot.get_channel(prime_channel)
         role:dRole = member_new.guild.get_role(countaholic_id)
-    # elif member_new.id == sasha_bot:
-    #     channel = bot.get_channel(sasha_channel)
+    elif member_new.id == sasha_bot:
+        channel = bot.get_channel(sasha_channel)
         role:dRole = member_new.guild.get_role(countaholic_id)
     elif member_new.id == numselli_bot :
         role:dRole = member_new.guild.get_role(have_save_id)
@@ -2702,6 +2699,8 @@ async def on_command_error(ctx, error):
         await ctx.reply("Not a valid choice")
     elif isinstance(error, commands.CommandNotFound):
         pass
+    elif isinstance(error, commands.MemberNotFound):
+        await ctx.reply("Member not found")
     else:
         raise error
 

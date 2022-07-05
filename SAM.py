@@ -1,3 +1,5 @@
+# using py-cord
+
 import discord 
 from discord import Embed, Option, TextChannel, Role as dRole, Member as dMember
 from discord.ext import commands, tasks
@@ -24,7 +26,7 @@ track_list = [
     numselli_channels["five"],
     numselli_channels["ten"],
     numselli_channels["hundred"],
-    sasha_channel
+    # sasha_channel
 ]
 emoji_list = [
     "<a:confetti:914965969661751309>", 
@@ -653,6 +655,9 @@ async def on_message(message:discord.Message):
                 mode = "5"
         else: 
             return
+        rev_num = number_str[::-1]
+        if rev_num == number_str:
+            await message.add_reaction("↔️")
         if number%100 == 0 and number!=0:
             if number%500 == 0:
                 if number%1000 == 0 and channel != classic_channel:
@@ -686,12 +691,26 @@ async def on_message(message:discord.Message):
                 await message.add_reaction("💯")
         elif number%100 == 69:
             await message.add_reaction("<:emoji69:915053989895221248>")
+        elif number%1000 == 161:
+            await message.add_reaction("🌀")
+        elif number%1000 == 271:
+            await message.add_reaction("🇪")
+        elif number%1000 == 314:
+            await message.add_reaction("🥧")
         elif number%1000 == 404:
             await message.add_reaction("🤖") 
         elif number%1000 == 420:
             await message.add_reaction("🌿")
         elif number%1000 == 666:
             await message.add_reaction("<:blobdevil:915054491227795477>")
+        elif number%1000 == 747:
+            await message.add_reaction("✈️")
+        elif number%1000 == 777:
+            await message.add_reaction("🎰")
+        elif number%1000 == 911:
+            await message.add_reaction("💥")
+        elif number%10_000 == 3108:
+            await message.add_reaction("💡")
         if re.match("n", msg_s):
             scores = bot.get_channel(bot_channel)
             msg = f"**{user.display_name}** has reached a new streak of "
@@ -1843,7 +1862,7 @@ async def on_message(message:discord.Message):
     await bot.process_commands(message)
 
 @bot.event
-async def on_presence_update(member_old,member_new):
+async def on_presence_update(member_old:dMember, member_new:dMember):
     if member_new.bot == False:
         return
     if member_new.raw_status == member_old.raw_status:
@@ -1869,9 +1888,9 @@ async def on_presence_update(member_old,member_new):
             return
         channel = bot.get_channel(prime_channel)
         role = member_new.guild.get_role(countaholic_id)
-    elif member_new.id == sasha_bot:
-        channel = bot.get_channel(sasha_channel)
-        role = member_new.guild.get_role(countaholic_id)
+    # elif member_new.id == sasha_bot:
+    #     channel = bot.get_channel(sasha_channel)
+    #     role = member_new.guild.get_role(countaholic_id)
     elif member_new.id == numselli_bot :
         role = member_new.guild.get_role(have_save_id)
     else:
@@ -1936,6 +1955,8 @@ async def on_command_error(ctx, error):
         await ctx.reply("Not a valid choice")
     elif isinstance(error, commands.CommandNotFound):
         pass
+    elif isinstance(error, commands.MemberNotFound):
+        await ctx.reply("Member not found")
     else:
         raise error
 
