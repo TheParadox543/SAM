@@ -1660,7 +1660,7 @@ async def on_message(message):
                 return
         else: 
             return
-        rev_num[::-1] = number_str
+        rev_num = number_str[::-1]
         if rev_num == number_str:
             await message.add_reaction("↔️")
         if number%100 == 0 and number!=0:
