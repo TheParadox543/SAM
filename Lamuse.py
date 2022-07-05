@@ -1660,6 +1660,9 @@ async def on_message(message):
                 return
         else: 
             return
+        rev_num = number_str
+        if rev_num == number_str:
+            await message.add_reaction("↔️")
         if number%100 == 0 and number!=0:
             if number%500 == 0:
                 if number%1000 == 0 and channel != classic_channel:
