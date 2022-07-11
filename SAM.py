@@ -2004,6 +2004,17 @@ async def daily():
     embedVar = Embed(title=f"{time}",description=msg,color=color_lamuse)
     scores:TextChannel = bot.get_channel(bot_channel)
     await scores.send(embed=embedVar)
+    og_collection.update_many(
+        {
+            "daily": {
+                "$gte": 1
+            }
+        }, {
+            "$set": {
+                "daily": 0
+            }
+        }
+    )
 
 r = requests.head(url="https://discord.com/api/v1")
 try:
@@ -2014,5 +2025,5 @@ except:
 for cog in cogs:
     bot.load_extension(f'{cog}')
 bot.add_cog(Vote(bot))
-bot.add_cog(Extension(bot))
+# bot.add_cog(Extension(bot))
 bot.run(BOT_TOKEN)
