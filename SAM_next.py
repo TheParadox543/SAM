@@ -10,7 +10,7 @@ Version start date: 2022/08/25
 import nextcord
 from nextcord.ext import commands
 
-TOKEN = "OTI5MzA2MDEzMjM5MjQ2ODYw.YdlZqw.epVED4A938I2lfYp30IA3J0m9uE"
+from secrets import TOKEN
 
 intents = nextcord.Intents.all()
 bot = commands.Bot(command_prefix="?", intents=intents)
