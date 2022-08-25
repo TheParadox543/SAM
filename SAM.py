@@ -664,27 +664,32 @@ async def on_message(message:discord.Message):
                     await message.add_reaction("❤️‍🔥")
                     milestone = bot.get_channel(mile_channel)
                     time = int(message.created_at.timestamp())
-                    if channel == og_channel \
-                            or channel == numselli_channels["whole"]:
-                        sen = ""
-                        while(len(number_str)>0):
-                            sen = number_str[-3:] + sen
-                            number_str = number_str[:-3]
-                            if len(number_str)>0:
-                                sen = "," + sen
-                        msg = f"Reached **{sen}** in <#{channel}> - "
-                        msg += f"<t:{time}:F>"
+                    if number==2_000_000:
+                        msg = f"**WE HIT __TWO MILLION__** at <t:{time}:F>. "
+                        msg += "**THIS IS AMAZING. LET'S KEEP GOING.**"
+                        await milestone.send(msg)
                     else:
-                        num_str = str(number)
-                        sen = ""
-                        while(len(num_str)>0):
-                            sen = num_str[-3:] + sen
-                            num_str = num_str[:-3]
-                            if len(num_str)>0:
-                                sen = "," + sen
-                        msg = f"Reached **{number_str}** ({sen}) in "
-                        msg += f"<#{channel}> - <t:{time}:F>"
-                    await milestone.send(msg)
+                        if channel == og_channel \
+                                or channel == numselli_channels["whole"]:
+                            sen = ""
+                            while(len(number_str)>0):
+                                sen = number_str[-3:] + sen
+                                number_str = number_str[:-3]
+                                if len(number_str)>0:
+                                    sen = "," + sen
+                            msg = f"Reached **{sen}** in <#{channel}> - "
+                            msg += f"<t:{time}:F>"
+                        else:
+                            num_str = str(number)
+                            sen = ""
+                            while(len(num_str)>0):
+                                sen = num_str[-3:] + sen
+                                num_str = num_str[:-3]
+                                if len(num_str)>0:
+                                    sen = "," + sen
+                            msg = f"Reached **{number_str}** ({sen}) in "
+                            msg += f"<#{channel}> - <t:{time}:F>"
+                        await milestone.send(msg)
                 else:
                     await message.add_reaction("🔥")
             else:
