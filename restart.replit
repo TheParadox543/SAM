@@ -1,0 +1,1 @@
+run="while [ false ]; do; python main.py: done"
