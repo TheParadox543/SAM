@@ -1,7 +1,7 @@
 """
 Code for SAM - version 3.0.0
 
-This is the code for the bot in nextcord
+This is the code for the bot in nextcord.
 
 Author: Samuel Alex Koshy (Paradox543#3217 on Discord)
 Version start date: 2022/08/25
@@ -9,11 +9,13 @@ Version start date: 2022/08/25
 
 import nextcord
 from nextcord.ext import commands
+import requests
 
-import bot_secrets
+from bot_secrets import *
+from database import *
 
 intents = nextcord.Intents.all()
-bot = commands.Bot(command_prefix="!", intents=intents)
+bot = commands.Bot(intents=intents)
 
 @bot.event
 async def on_ready():
@@ -28,11 +30,6 @@ class Test(commands.Cog):
         if message.content.startswith("!!testing"):
             await message.channel.send("Test success")
 
-@bot.command()
-async def test(ctx):
-    print("test")
-    await ctx.reply("Pong!")
-
 @bot.slash_command(guild_ids=[892553570208088064])
 async def test(ctx):
     print("Hey")
@@ -46,7 +43,8 @@ async def on_message(message:nextcord.Message):
     content = message.content
 
     if content.startswith("!!"):
-        if content[2:].startswith("hello"):
+        content = content[2:]
+        if content.startswith("hello"):
             print("Hi")
             await message.channel.send("Hi")
 
@@ -54,6 +52,12 @@ async def on_message(message:nextcord.Message):
         if message.content == "hello":
             await message.reply("Hi")
 
+r = requests.head(url="https://discord.com/api/v1")
+try:
+    print(f"Rate limit {int(r.headers['Retry-After']) / 60} minutes left")
+except:
+    print("No rate limit")
+
 bot.add_cog(Test(bot))
 
-bot.run(bot_secrets.BOT_TEST)
+bot.run(BOT_TEST)
