@@ -1,19 +1,19 @@
-import discord 
-from discord import Embed, Option, Member as dMember
-from discord.ext import commands
 from datetime import datetime
+
+import nextcord 
+from nextcord import Embed, SlashOption, Member
+from nextcord.ext import commands
+from nextcord.ext.commands import Context
 
 from bot_secrets import *
 from database import *
-
-epoch_time = datetime(1970, 1, 1, tzinfo=None)
 
 class Reminders(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
 
     @commands.group(invoke_without_command=True)
-    async def ogregister(self,ctx):
+    async def ogregister(self, ctx:Context):
         """Register for c!vote reminders"""
         register_list = misc.find_one({"_id":"ogregister"})
         userID = ctx.author.id
@@ -47,7 +47,7 @@ class Reminders(commands.Cog):
 
     @ogregister.command(name="set")
     @admin_perms()
-    async def ogreg_set(self,ctx,user:dMember):
+    async def ogreg_set(self, ctx:Context, user:Member):
         """Register for c!vote reminders"""
         register_list = misc.find_one({"_id":"ogregister"})
         userID = user.id
@@ -78,8 +78,8 @@ class Reminders(commands.Cog):
             msg = f"<@{userID}> will not get reminders for voting"
             await ctx.send(msg)
 
-    @commands.command(aliases=['reminder','rm'])
-    async def reminders(self, ctx, member:dMember=None):
+    @commands.command(aliases=["reminder", "rm"])
+    async def reminders(self, ctx:Context, member:Member=None):
         """Shows the list of reminders the bot has for a user"""
         user = member or ctx.author
         rem_list = time_collection.find({"user":user.id})
@@ -89,7 +89,7 @@ class Reminders(commands.Cog):
             time_diff = item['time'] - time_now
             time_diff = int(time_diff.total_seconds())
             if time_diff > 0:
-                total_seconds = int((item['time'] - epoch_time).total_seconds())
+                total_seconds = int((item['time'] - EPOCH).total_seconds())
                 msg += f"{item['command']} - <t:{total_seconds}:R>\n"
         if msg == "":
             msg = "No reminders have been set"
@@ -100,10 +100,12 @@ class Reminders(commands.Cog):
         )
         await ctx.send(embed=embedVar)
 
-    @discord.slash_command(name="reminders", guild_ids=servers)
+    @nextcord.slash_command(name="reminders", guild_ids=servers)
     async def slash_reminders(self, ctx, 
-            member:Option(dMember,
-                description="The user whose reminders you want to check")=None):
+            member:Member = SlashOption(
+                description="The user whose reminders you want to check",
+                required=False)
+    ):
         """Shows the list of reminders the bot has for a user"""
         user = member or ctx.author
         rem_list = time_collection.find({"user":user.id})
@@ -113,7 +115,7 @@ class Reminders(commands.Cog):
             time_diff = item['time'] - time_now
             time_diff = int(time_diff.total_seconds())
             if time_diff > 0:
-                total_seconds = int((item['time'] - epoch_time).total_seconds())
+                total_seconds = int((item['time'] - EPOCH).total_seconds())
                 msg += f"{item['command']} - <t:{total_seconds}:R>\n"
         if msg == "":
             msg = "No reminders have been set"
@@ -122,10 +124,10 @@ class Reminders(commands.Cog):
             description=msg,
             color=color_lamuse
         )
-        await ctx.respond(embed=embedVar)
+        await ctx.send(embed=embedVar)
 
     @commands.command()#invoke_without_command=True)
-    async def dankregister(self,ctx):
+    async def dankregister(self, ctx:Context):
         """Register for dank memer reminders"""
         register_list = dank_collection.find_one({"_id":"register"})
         userID = ctx.author.id
@@ -155,19 +157,6 @@ class Reminders(commands.Cog):
             )
             msg = f"<@{userID}> will not get reminders in dank memer"
             await ctx.send(msg)
-
-    @commands.command()
-    async def duckregister(self, ctx):
-        """Register for duck hunt reminders"""
-        guild:discord.Guild = ctx.guild
-        user:discord.Member = ctx.author
-        hunter = guild.get_role(hunter_id)
-        if hunter not in user.roles:
-            await user.add_roles(hunter)
-            await ctx.respond("You will now get pings when ducks appear")
-        else:
-            await user.remove_roles(hunter)
-            await ctx.respond("You will not get pings when ducks appear")
 
 def setup(bot:commands.Bot):
     bot.add_cog(Reminders(bot))

@@ -1,7 +1,9 @@
-import discord 
-from discord import Embed, Option, Member as dMember
-from discord.ext import commands
 import typing
+
+import nextcord
+from nextcord import Embed, Interaction, SlashOption, Member
+from nextcord.ext import commands
+from nextcord.ext.commands import Context
 
 from bot_secrets import *
 from database import *
@@ -37,8 +39,8 @@ class List(commands.Cog):
         embedVar = Embed(title=title_msg,description=msg,color=color_lamuse)
         await ctx.send(embed=embedVar)
 
-    @commands.group(aliases=['ocounter','oc'],invoke_without_command=True)
-    async def ogcounter(self, ctx):
+    @commands.group(aliases=['ocounter','oc'], invoke_without_command=True)
+    async def ogcounter(self, ctx:Context):
         """
         Registers counters to receive saves from other users
         """
@@ -77,7 +79,7 @@ class List(commands.Cog):
 
     @ogcounter.command(name="set")
     @admin_perms()
-    async def og_set(self,ctx,user:dMember):
+    async def og_set(self,ctx,user:Member):
         """Used to set another counter as ogcounter by admin"""
         user_post = og_collection.find_one({"_id":user.id}, {"counter":1})
         if user_post:
@@ -176,7 +178,7 @@ class List(commands.Cog):
 
     @betacounter.command(name='set')
     @admin_perms()
-    async def beta_set(self, ctx, user:dMember):
+    async def beta_set(self, ctx, user:Member):
         """Used to set another counter as AlphaBeta counter by an admin"""
         user_post = beta_collection.find_one({"_id":user.id}, {"counter":1})
         if user_post:
@@ -211,7 +213,7 @@ class List(commands.Cog):
         await ctx.send(msg)
 
     @commands.command()
-    async def checklist(self, ctx,
+    async def checklist(self, ctx:commands.Context,
             type_check:typing.Literal["og","b","vote"]): #'a'
         """Displays the list of people registered to receive saves"""
         msg = ""
@@ -263,9 +265,9 @@ class List(commands.Cog):
         embedVar = Embed(title=title_msg,description=msg,color=color_lamuse)
         await ctx.send(embed=embedVar)
 
-    @discord.slash_command(name="checklist", guild_ids=servers)
-    async def slash_checklist(self, ctx,
-            type_check:Option(str,
+    @nextcord.slash_command(name="checklist", guild_ids=servers)
+    async def slash_checklist(self, ctx:Interaction,
+            type_check:str = SlashOption(
                 description="List type",
                 choices=['og','b','vote'])): #'a'
         """Displays the list of people registered to receive saves"""
@@ -316,7 +318,7 @@ class List(commands.Cog):
         else:
             return
         embedVar = Embed(title=title_msg,description=msg,color=color_lamuse)
-        await ctx.respond(embed=embedVar)
+        await ctx.send(embed=embedVar)
 
 def setup(bot:commands.Bot):
     bot.add_cog(List(bot))

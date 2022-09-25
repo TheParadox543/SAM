@@ -1,5 +1,7 @@
-from pymongo import MongoClient
 import certifi
+from datetime import datetime, timezone
+
+from pymongo import MongoClient
 
 from bot_secrets import *
 
@@ -7,15 +9,15 @@ ca = certifi.where()
 
 CLUSTER = MongoClient(MONGO_DB_CONNECTION_STRING, tlsCAFile=ca)
 
-db = CLUSTER['lamuse']
-og_collection = db['ogcollection']
-classic_collection = db['classiccollection']
-abc_collection = db['abccollection']
-beta_collection = db['betacollection']
-numselli_collection = db['numsellicollection']
-misc = db['misc']
-time_collection = db['time']
-dank_collection = db['dank']
+db = CLUSTER["lamuse"]
+og_collection = db["ogcollection"]
+classic_collection = db["classiccollection"]
+abc_collection = db["abccollection"]
+beta_collection = db["betacollection"]
+numselli_collection = db["numsellicollection"]
+misc = db["misc"]
+time_collection = db["time"]
+dank_collection = db["dank"]
 
 track_list = [
     og_channel,
@@ -72,3 +74,5 @@ roman = {
     'CD':400,
     'CM':900
 }
+
+EPOCH = datetime(1970, 1, 1, tzinfo=timezone.utc)
