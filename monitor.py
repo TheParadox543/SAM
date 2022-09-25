@@ -167,17 +167,6 @@ class Monitor(commands.Cog):
                 self.og_last_count = time_now
                 if abs(time_diff) >= timedelta(minutes=10) \
                         or self.og_start_count == EPOCH:
-                    # time_collection.update_one(
-                    #     {
-                    #         "_id":"run"
-                    #     }, {
-                    #         "$set":
-                    #         {
-                    #             "time_last":time_now,
-                    #             "time_start":time_now
-                    #         }
-                    #     }
-                    # )
                     scores_chnl:TextChannel = guild.get_channel(bot_channel)
                     msg = f"Last run in <#{og_channel}> had "
                     msg += f"**{self.og_count}** numbers."
@@ -186,23 +175,13 @@ class Monitor(commands.Cog):
                     except nextcord.errors.Forbidden:
                         logger_monitor.error(f"Couldn't send message in {scores_chnl}")
                     self.og_start_count = time_now
-                    self.og_count = 0
+                    self.og_count = 1
                     try:
                         with open("run_time.txt", "w") as file:
                             json.dump(self.og_start_count.isoformat(), file)
                     except:
                         logger_monitor.error("Couldn't save run start.")
                 else:
-                    # time_collection.update_one(
-                    #     {
-                    #         "_id":"run"
-                    #     }, {
-                    #         "$set":
-                    #         {
-                    #             "time_last":time_now
-                    #         }
-                    #     }
-                    # )
                     self.og_count += 1
             elif channel == classic_channel and re.match("\d", number_str):
                 try:
