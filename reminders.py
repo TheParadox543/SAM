@@ -48,7 +48,7 @@ class Reminders(commands.Cog):
     @ogregister.command(name="set")
     @admin_perms()
     async def ogreg_set(self, ctx:Context, user:Member):
-        """Register for c!vote reminders"""
+        """Register for c!vote reminders by admins"""
         register_list = misc.find_one({"_id":"ogregister"})
         userID = user.id
         if f"{userID}" not in register_list or register_list[f"{userID}"] == False:

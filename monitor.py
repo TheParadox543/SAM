@@ -167,13 +167,14 @@ class Monitor(commands.Cog):
                 self.og_last_count = time_now
                 if abs(time_diff) >= timedelta(minutes=10) \
                         or self.og_start_count == EPOCH:
-                    scores_chnl:TextChannel = guild.get_channel(bot_channel)
-                    msg = f"Last run in <#{og_channel}> had "
-                    msg += f"**{self.og_count}** numbers."
-                    try:
-                        await scores_chnl.send(msg)
-                    except nextcord.errors.Forbidden:
-                        logger_monitor.error(f"Couldn't send message in {scores_chnl}")
+                    if self.og_count >= 50:
+                        scores_chnl:TextChannel = guild.get_channel(sam_channel)
+                        msg = f"Last run in <#{og_channel}> had "
+                        msg += f"**{self.og_count}** numbers."
+                        try:
+                            await scores_chnl.send(msg)
+                        except nextcord.errors.Forbidden:
+                            logger_monitor.error(f"Couldn't send message in {scores_chnl}")
                     self.og_start_count = time_now
                     self.og_count = 1
                     try:
@@ -573,14 +574,14 @@ class Monitor(commands.Cog):
             elif number%10_000 == 3108:
                 await message.add_reaction("💡")
             if re.match("n", msg_s):
-                scores = self.bot.get_channel(bot_channel)
+                scores = self.bot.get_channel(sam_channel)
                 msg = f"**{user.display_name}** has reached a new streak of "
                 msg += f"**{str(msg_s)[1:]}** with {mode_list[mode]}"
                 embedVar = Embed(description=msg,color=color_lamuse)
                 await scores.send(embed=embedVar)
                 await message.add_reaction("<:blobyes:915054339796639745>")
             elif re.match("\d", msg_s):
-                scores = self.bot.get_channel(bot_channel)
+                scores = self.bot.get_channel(sam_channel)
                 msg = f"**{user.display_name}** has reached a streak of "
                 msg += f"**{msg_s}** with {mode_list[mode]}"
                 embedVar = Embed(description=msg,color=color_lamuse)
@@ -852,7 +853,7 @@ class Monitor(commands.Cog):
                     return
                 else:
                     return
-                scores = self.bot.get_channel(bot_channel)
+                scores = self.bot.get_channel(sam_channel)
                 msg = f"**{user.display_name}**'s streak with "
                 msg += f"{mode_list[mode]} has been reset from "
                 msg += f"**{final_streak}** to 0"
@@ -1541,7 +1542,7 @@ class Monitor(commands.Cog):
                                 }
                             )
                     mode="5"
-                    scores = self.bot.get_channel(bot_channel)
+                    scores = self.bot.get_channel(sam_channel)
                     msg = f"**{user.display_name}**'s streak with "
                     msg += f"{mode_list[mode]} has been reset from "
                     msg += f"**{final_streak}** to 0"

@@ -86,7 +86,7 @@ async def daily():
         daily = user.get("daily",">1")
         msg += f"\n{i}. {name} - {daily}"
     embedVar = Embed(title=f"{time}",description=msg,color=color_lamuse)
-    scores:TextChannel = bot.get_channel(bot_channel)
+    scores:TextChannel = bot.get_channel(sam_channel)
     await scores.send(embed=embedVar)
     og_collection.update_many(
         {
