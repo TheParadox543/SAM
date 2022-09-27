@@ -1090,7 +1090,8 @@ class Monitor(commands.Cog):
         if author.id == classic_bot:
             if message.embeds:
                 embed_content = message.embeds[0].to_dict()
-                if 'author' in embed_content.keys():
+                if ('author' in embed_content.keys()
+                        and "fields" in embed_content):
                     name = embed_content["author"]["name"]
                     user = guild.get_member_named(name)
                     desc = embed_content["fields"][0]["value"]
