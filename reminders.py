@@ -1,9 +1,11 @@
-from datetime import datetime
+from datetime import datetime, timezone
+from typing import Union
 
 import nextcord 
-from nextcord import Embed, SlashOption, Member
+from nextcord import Embed, Interaction, Member, SlashOption
 from nextcord.ext import commands
 from nextcord.ext.commands import Context
+from nextcord import utils
 
 from bot_secrets import *
 from database import *
@@ -78,45 +80,34 @@ class Reminders(commands.Cog):
             msg = f"<@{userID}> will not get reminders for voting"
             await ctx.send(msg)
 
-    @commands.command(aliases=["reminder", "rm"])
-    async def reminders(self, ctx:Context, member:Member=None):
-        """Shows the list of reminders the bot has for a user"""
+    @commands.command(name="reminder", aliases=["rm"])
+    async def command_reminders(self, ctx:Context, member:Member=None):
+        """Shows the list of reminders set for a user."""
         user = member or ctx.author
-        rem_list = time_collection.find({"user":user.id})
-        msg = ""
-        time_now = datetime.utcnow().replace(microsecond=0)
-        for item in rem_list:
-            time_diff = item['time'] - time_now
-            time_diff = int(time_diff.total_seconds())
-            if time_diff > 0:
-                total_seconds = int((item['time'] - EPOCH).total_seconds())
-                msg += f"{item['command']} - <t:{total_seconds}:R>\n"
-        if msg == "":
-            msg = "No reminders have been set"
-        embedVar = Embed(
-            title=f"Reminders for {user}",
-            description=msg,
-            color=color_lamuse
-        )
-        await ctx.send(embed=embedVar)
+        await self.reminders(ctx, user)
 
     @nextcord.slash_command(name="reminders", guild_ids=servers)
-    async def slash_reminders(self, ctx, 
+    async def slash_reminders(self, ctx:Interaction, 
             member:Member = SlashOption(
                 description="The user whose reminders you want to check",
                 required=False)
     ):
-        """Shows the list of reminders the bot has for a user"""
-        user = member or ctx.author
+        """Shows the list of reminders set for a user."""
+        user = member or ctx.user
+        await self.reminders(ctx, user)
+
+    async def reminders(self, ctx:Union[Interaction, Context], user:Member):
+        """Display the reminders of the user."""
         rem_list = time_collection.find({"user":user.id})
         msg = ""
-        time_now = datetime.utcnow().replace(microsecond=0)
+        time_now = utils.utcnow().replace(microsecond=0)
         for item in rem_list:
-            time_diff = item['time'] - time_now
+            rem_time:datetime = item["time"].replace(tzinfo=timezone.utc)
+            time_diff = rem_time - time_now
             time_diff = int(time_diff.total_seconds())
-            if time_diff > 0:
-                total_seconds = int((item['time'] - EPOCH).total_seconds())
-                msg += f"{item['command']} - <t:{total_seconds}:R>\n"
+            if utils.compute_timedelta(rem_time):
+                time_str = utils.format_dt(rem_time, "R")
+                msg += f"{item['command']} - {time_str}\n"
         if msg == "":
             msg = "No reminders have been set"
         embedVar = Embed(

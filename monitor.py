@@ -1,3 +1,4 @@
+import asyncio
 from datetime import timedelta, timezone
 import json
 import logging
@@ -6,7 +7,7 @@ import re
 from typing import Union
 
 import nextcord
-from nextcord import Interaction, Embed, Member, Role, TextChannel
+from nextcord import Interaction, Embed, Member, Message, Role, TextChannel
 from nextcord import utils
 from nextcord.ext import commands
 
@@ -869,119 +870,7 @@ class Monitor(commands.Cog):
         if author.id == og_bot:
             if message.embeds:
                 embed_content = message.embeds[0].to_dict()
-                if 'description' in embed_content.keys() and \
-                        'fields' in embed_content.keys():
-                    descript = embed_content['description']
-                    if re.findall("You currently have",descript):
-                        saves = descript.split("**")[1]
-                        current_saves = float(saves.split("/")[0])
-                        total_saves = int(saves.split("/")[1])
-                        ogsave = guild.get_role(og_save_id)
-                        dishonorable = guild.get_role(dishonorable_id)
-                        user_post = misc.find_one({"_id":"c!vote"})
-                        user = guild.get_member(user_post['user'])
-                        if user:
-                            if og_collection.find_one({"_id":user.id}):
-                                og_collection.update_one(
-                                    {
-                                        "_id":user.id
-                                    }, {
-                                        "$set":
-                                        {
-                                            "current_saves":current_saves,
-                                            "total_saves":total_saves
-                                        }
-                                    }
-                                )
-                            else:
-                                msg = "Run `c!user` first"
-                                await message.reply(msg)
-                                return
-                            if dishonorable in user.roles:
-                                await user.remove_roles(ogsave)
-                                await message.add_reaction("❌")
-                            elif current_saves >= 1:
-                                if ogsave not in user.roles:
-                                    await user.add_roles(ogsave)
-                                    msg = f"<@{user.id}> can "
-                                    msg += f"now count in <#{og_channel}>"
-                                    await message.channel.send(msg)
-                                else:
-                                    await message.add_reaction("✅")
-                            else:
-                                if ogsave in user.roles:
-                                    await user.remove_roles(ogsave)
-                                    msg = f"<@{user.id}> does not have enough saves "
-                                    msg += f"to count in <#{og_channel}>"
-                                    await message.channel.send(msg)
-                                else:
-                                    await message.add_reaction("❌")
-                        register_list = misc.find_one({"_id":"ogregister"})
-                        if f"{user.id}" in register_list:
-                            if register_list[f"{user.id}"] == True:
-                                field1 = embed_content['fields'][0]['value']
-                                field2 = embed_content['fields'][1]['value']
-                                if re.search("You have already",field1):
-                                    time1 = re.findall("[\d\.]+",field1)
-                                    hour1 = float(time1[1]) + 0.05
-                                    time_now=datetime.utcnow().replace(microsecond=0)
-                                    time_new = time_now + timedelta(hours=hour1)
-                                    if time_collection.find_one(
-                                        {
-                                            "user":user.id,
-                                            "command":"vote in Discords.com"
-                                        }
-                                    ):
-                                        time_collection.update_one(
-                                            {
-                                                "user":user.id,
-                                                "command":"vote in Discords.com"
-                                            }, {
-                                                "$set":
-                                                {
-                                                    "time":time_new
-                                                }
-                                            }
-                                        )
-                                    else:
-                                        time_collection.insert_one(
-                                            {
-                                                "time":time_new,
-                                                "user":user.id,
-                                                "command":"vote in Discords.com"
-                                            }
-                                        )
-                                if re.search("You have already", field2):
-                                    time2 = re.findall("[\d\.]+",field2)
-                                    hour2 = float(time2[1]) + 0.05
-                                    time_now=datetime.utcnow().replace(microsecond=0)
-                                    time_new = time_now + timedelta(hours=hour2)
-                                    if time_collection.find_one(
-                                        {
-                                            "user":user.id,
-                                            "command":"vote in top.gg"
-                                        }
-                                    ):
-                                        time_collection.update_one(
-                                            {
-                                                "user":user.id,
-                                                "command":"vote in top.gg"
-                                            }, {
-                                                "$set":
-                                                {
-                                                    "time":time_new
-                                                }
-                                            }
-                                        )
-                                    else:
-                                        time_collection.insert_one(
-                                            {
-                                                "time":time_new,
-                                                "user":user.id,
-                                                "command":"vote in top.gg"
-                                            }
-                                        )
-                elif 'fields' in embed_content.keys():
+                if 'fields' in embed_content:
                     if embed_content['fields'][0]['name'] == "Global Stats":
                         user_test = misc.find_one({"_id":"c!user"})
                         user = guild.get_member(user_test['user'])
@@ -1090,8 +979,7 @@ class Monitor(commands.Cog):
         if author.id == classic_bot:
             if message.embeds:
                 embed_content = message.embeds[0].to_dict()
-                if ('author' in embed_content.keys()
-                        and "fields" in embed_content):
+                if "author" in embed_content and "fields" in embed_content:
                     name = embed_content["author"]["name"]
                     user = guild.get_member_named(name)
                     desc = embed_content["fields"][0]["value"]
@@ -1668,11 +1556,16 @@ class Monitor(commands.Cog):
                 misc.update_one({"_id":"c!user"}, {"$set":{"user":userID}})
             else:
                 misc.insert_one({"_id":"c!user","user":userID})
-        if re.match("c!vote",content,re.I):
-            if misc.find_one({"_id":"c!vote"}):
-                misc.update_one({"_id":"c!vote"}, {"$set":{"user":author.id}})
+        if re.match("c!vote", content, re.I):
+            def check(message:Message):
+                return message.author.id == og_bot and message.embeds
+            try:
+                msg:Message = await self.bot.wait_for("message", 
+                    check=check, timeout=5)
+            except asyncio.TimeoutError:
+                await message.channel.send("Failed")
             else:
-                misc.insert_one({"_id":"c!vote","user":author.id})
+                await self.vote_update(message, msg)
         if re.match("c!transfersave",content,re.I):
             if misc.find_one({"_id":"c!transfersave"}):
                 misc.update_one({"_id":"c!transfersave"}, {"$set":{"user":author.id}})
@@ -1867,6 +1760,117 @@ class Monitor(commands.Cog):
             msg += f"**{self.og_count}** numbers have been counted."
 
         await ctx.send(msg)
+
+    async def vote_update(self, message:Message, msg:Message):
+        """Update vote stats after using c!vote."""
+        embed_content = msg.embeds[0].to_dict()
+        descript = embed_content["description"]
+        saves = descript.split("**")[1]
+        current_saves = float(saves.split("/")[0])
+        total_saves = int(saves.split("/")[1])
+        ogsave = msg.guild.get_role(og_save_id)
+        dishonorable = msg.guild.get_role(dishonorable_id)
+        user = message.author
+        if og_collection.find_one({"_id": user.id}):
+            og_collection.update_one(
+                {
+                    "_id":user.id
+                }, {
+                    "$set":
+                    {
+                        "current_saves": current_saves,
+                        "total_saves": total_saves
+                    }
+                }
+            )
+        else:
+            msg = "Run `c!user` first."
+            await message.reply(msg)
+            return
+        if dishonorable in user.roles:
+            await user.remove_roles(ogsave)
+            await msg.add_reaction("❌")
+        elif current_saves >= 1:
+            if ogsave not in user.roles:
+                await user.add_roles(ogsave)
+                msg = f"<@{user.id}> can "
+                msg += f"now count in <#{og_channel}>"
+                await message.channel.send(msg)
+            else:
+                await msg.add_reaction("✅")
+        else:
+            if ogsave in user.roles:
+                await user.remove_roles(ogsave)
+                msg = f"<@{user.id}> does not have enough saves "
+                msg += f"to count in <#{og_channel}>"
+                await message.channel.send(msg)
+            else:
+                await msg.add_reaction("❌")
+        register_list = misc.find_one({"_id": "ogregister"})
+        if (f"{user.id}" in register_list and
+                register_list[f"{user.id}"] == True):
+            field1 = embed_content["fields"][0]["value"]
+            field2 = embed_content["fields"][1]["value"]
+            if re.search("You have already", field1):
+                time1 = re.findall("[\d\.]+", field1)
+                hour1 = float(time1[1]) + 0.05
+                time_now = datetime.utcnow().replace(microsecond=0)
+                time_new = time_now + timedelta(hours=hour1)
+                if time_collection.find_one(
+                    {
+                        "user": user.id,
+                        "command": "vote in Discords.com"
+                    }
+                ):
+                    time_collection.update_one(
+                        {
+                            "user": user.id,
+                            "command": "vote in Discords.com"
+                        }, {
+                            "$set":
+                            {
+                                "time": time_new
+                            }
+                        }
+                    )
+                else:
+                    time_collection.insert_one(
+                        {
+                            "time": time_new,
+                            "user": user.id,
+                            "command": "vote in Discords.com"
+                        }
+                    )
+            if re.search("You have already", field2):
+                time2 = re.findall("[\d\.]+", field2)
+                hour2 = float(time2[1]) + 0.05
+                time_now = datetime.utcnow().replace(microsecond=0)
+                time_new = time_now + timedelta(hours=hour2)
+                if time_collection.find_one(
+                    {
+                        "user": user.id,
+                        "command": "vote in top.gg"
+                    }
+                ):
+                    time_collection.update_one(
+                        {
+                            "user": user.id,
+                            "command": "vote in top.gg"
+                        }, {
+                            "$set":
+                            {
+                                "time": time_new
+                            }
+                        }
+                    )
+                else:
+                    time_collection.insert_one(
+                        {
+                            "time": time_new,
+                            "user": user.id,
+                            "command": "vote in top.gg"
+                        }
+                    )
 
 def setup(bot):
     bot.add_cog(Monitor(bot))
