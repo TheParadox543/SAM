@@ -12,6 +12,7 @@ from database import *
 
 class AdminCommands(commands.Cog, name="Admin Commands"):
     """Moderators can lock and unlock channels here."""
+
     def __init__(self, bot:commands.Bot):
         self.bot = bot
 

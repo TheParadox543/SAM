@@ -7,6 +7,8 @@ from nextcord.ext import commands
 from bot_secrets import *
 
 class Utils(commands.Cog):
+    """A few util functions."""
+
     def __init__(self, bot:commands.Bot):
         """Initialize the cog."""
         self.bot = bot

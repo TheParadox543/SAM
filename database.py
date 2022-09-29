@@ -76,3 +76,5 @@ roman = {
 }
 
 EPOCH = datetime(1970, 1, 1, tzinfo=timezone.utc)
+
+ogreg_help = "Toggle for c!vote reminders. If you write DM as an option, bot will toggle reminders sent to your DM."

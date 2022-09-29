@@ -46,14 +46,21 @@ class Vote(commands.Cog):
 
 @tasks.loop(seconds=0.9)
 async def check_time():
-    time_now = datetime.utcnow().replace(tzinfo=None,microsecond=0)
+    time_now = datetime.utcnow().replace(tzinfo=None, microsecond=0)
     if time_collection.find_one({"time":time_now}):
         time_cursor = time_collection.find({"time":time_now})
         scores = bot.get_channel(scores_channel)
         for cursor in time_cursor:
-            user = cursor['user']
-            command = cursor['command']
-            await scores.send(f"<@{user}> time to {command}")
+            user_id:int = cursor["user"]
+            command:str = cursor["command"]
+            dm = cursor.get("dm", False)
+            if dm:
+                user = bot.get_user(user_id)
+                if user is None:
+                    user = await bot.fetch_user(user_id)
+                await user.send(f"Time to {command}.")
+            else:
+                await scores.send(f"<@{user_id}> time to {command}.")
             time_collection.delete_one(cursor)
     if dank_collection.find_one({"time":time_now}):
         time_cursor = dank_collection.find({"time":time_now})

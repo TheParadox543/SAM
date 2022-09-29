@@ -1771,7 +1771,8 @@ class Monitor(commands.Cog):
         ogsave = msg.guild.get_role(og_save_id)
         dishonorable = msg.guild.get_role(dishonorable_id)
         user = message.author
-        if og_collection.find_one({"_id": user.id}):
+        counter_post = og_collection.find_one({"_id": user.id})
+        if counter_post is not None:
             og_collection.update_one(
                 {
                     "_id":user.id
@@ -1806,9 +1807,9 @@ class Monitor(commands.Cog):
                 await message.channel.send(msg)
             else:
                 await msg.add_reaction("❌")
-        register_list = misc.find_one({"_id": "ogregister"})
-        if (f"{user.id}" in register_list and
-                register_list[f"{user.id}"] == True):
+        rem = counter_post.get("reminder", False)
+        dm = counter_post.get("dm", False)
+        if rem:
             field1 = embed_content["fields"][0]["value"]
             field2 = embed_content["fields"][1]["value"]
             if re.search("You have already", field1):
@@ -1829,7 +1830,8 @@ class Monitor(commands.Cog):
                         }, {
                             "$set":
                             {
-                                "time": time_new
+                                "time": time_new,
+                                "dm": dm
                             }
                         }
                     )
@@ -1838,7 +1840,8 @@ class Monitor(commands.Cog):
                         {
                             "time": time_new,
                             "user": user.id,
-                            "command": "vote in Discords.com"
+                            "command": "vote in Discords.com",
+                            "dm": dm
                         }
                     )
             if re.search("You have already", field2):
@@ -1859,7 +1862,8 @@ class Monitor(commands.Cog):
                         }, {
                             "$set":
                             {
-                                "time": time_new
+                                "time": time_new,
+                                "dm": dm
                             }
                         }
                     )
@@ -1868,7 +1872,8 @@ class Monitor(commands.Cog):
                         {
                             "time": time_new,
                             "user": user.id,
-                            "command": "vote in top.gg"
+                            "command": "vote in top.gg", 
+                            "dm": dm
                         }
                     )
 

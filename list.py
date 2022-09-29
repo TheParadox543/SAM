@@ -9,6 +9,10 @@ from bot_secrets import *
 from database import *
 
 class List(commands.Cog):
+    """
+    Display different lists that the bot has, such as those whose names appear for getting gift saves from other users.
+    """
+
     def __init__(self, bot):
         self.bot = bot
     
