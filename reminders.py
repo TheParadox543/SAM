@@ -1,5 +1,5 @@
 from datetime import datetime, timezone
-from typing import Union
+from typing import Literal, Union
 
 import nextcord 
 from nextcord import Embed, Interaction, Member, SlashOption
@@ -114,36 +114,55 @@ class Reminders(commands.Cog):
         await ctx.send(embed=embedVar)
 
     @commands.command()#invoke_without_command=True)
-    async def dankregister(self, ctx:Context):
-        """Register for dank memer reminders"""
-        register_list = dank_collection.find_one({"_id":"register"})
-        userID = ctx.author.id
-        if f"{userID}" not in register_list or register_list[f"{userID}"] == False:
-            dank_collection.update_one(
-                {
-                    "_id":"register"
-                }, {
-                    "$set":
+    async def dankregister(self, ctx:Context, dm:Literal["dm"]=None):
+        """Register for dank memer reminders."""
+        user_id = ctx.author.id
+        post = time_collection.find_one(
+            {
+                "user": user_id,
+                "command": "work shift",
+            }
+        )
+        if post is not None:
+            if dm is not None:
+                dm_data:bool = post.get("dm", False)
+                time_collection.update_one(
                     {
-                        f"{userID}":True
+                        "user": user_id,
+                        "command": "work shift",
+                    }, {
+                        "$set": {
+                            "dm": not dm_data,
+                        }
                     }
-                }
-            )
-            msg = f"<@{userID}> is now registered for getting reminders in dank memer"
-            await ctx.send(msg)
+                )
+                if dm_data:
+                    msg = f"<@{user_id}> will no longer get dank reminders in DM."
+                else:
+                    msg = f"<@{user_id}> will now get dank reminders in DM."
+            else:
+                time_collection.delete_one(
+                    {
+                        "user": user_id,
+                        "command": "work shift",
+                    }
+                )
+                msg = f"<@{user_id}> will no longer get dank reminders."
         else:
-            dank_collection.update_one(
+            if dm is not None:
+                dm = True
+                msg = f"<@{user_id}> will get dank reminders in dm."
+            else:
+                dm = False
+                msg = f"<@{user_id}> will get dank reminders."
+            time_collection.insert_one(
                 {
-                    "_id":"register"
-                }, {
-                    "$set":
-                    {
-                        f"{userID}":False
-                    }
+                    "user": user_id,
+                    "command": "work shift",
+                    "dm": dm,
                 }
             )
-            msg = f"<@{userID}> will not get reminders in dank memer"
-            await ctx.send(msg)
+        await ctx.send(msg)
 
 def setup(bot:commands.Bot):
     bot.add_cog(Reminders(bot))

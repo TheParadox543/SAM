@@ -49,7 +49,6 @@ async def check_time():
     time_now = datetime.utcnow().replace(tzinfo=None, microsecond=0)
     if time_collection.find_one({"time":time_now}):
         time_cursor = time_collection.find({"time":time_now})
-        scores = bot.get_channel(scores_channel)
         for cursor in time_cursor:
             user_id:int = cursor["user"]
             command:str = cursor["command"]
@@ -60,16 +59,10 @@ async def check_time():
                     user = await bot.fetch_user(user_id)
                 await user.send(f"Time to {command}.")
             else:
-                await scores.send(f"<@{user_id}> time to {command}.")
-            time_collection.delete_one(cursor)
-    if dank_collection.find_one({"time":time_now}):
-        time_cursor = dank_collection.find({"time":time_now})
-        dank_chnl = bot.get_channel(dank_channel)
-        for cursor in time_cursor:
-            user = cursor['user']
-            command = cursor['command']
-            await dank_chnl.send(f"<@{user}> time to {command}")
-            dank_collection.delete_one(cursor)
+                channel_send_id:int = cursor.get("channel", 
+                    scores_channel if command != "work shift" else dank_channel)
+                channel_send:TextChannel = bot.get_channel(channel_send_id)
+                await channel_send.send(f"<@{user_id}> time to {command}.")
 
 @tasks.loop(time=time(hour=23,minute=59,second=59,tzinfo=None))
 async def daily():

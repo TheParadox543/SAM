@@ -216,64 +216,22 @@ class List(commands.Cog):
             msg = "Run stat commands first"
         await ctx.send(msg)
 
-    @commands.command()
-    async def checklist(self, ctx:commands.Context,
-            type_check:typing.Literal["og","b","vote"]): #'a'
-        """Displays the list of people registered to receive saves"""
-        msg = ""
-        if type_check == 'og':
-            counter_list = og_collection.aggregate([
-                {
-                    '$match':{'counter':True}
-                },
-                {
-                    '$project':{'name':1}
-                }
-            ])
-            for counter in counter_list:
-                msg += f"{counter['name']}\n"
-            title_msg = "List of og counters registered by the bot"
-        # elif type_check == "a":
-        #     counter_list = abc_collection.aggregate([
-        #         {
-        #             '$match':{'counter':True}
-        #         },
-        #         {
-        #             '$project':{'name':1}
-        #         }
-        #     ])
-        #     for counter in counter_list:
-        #         msg += f"{counter['name']}\n"
-        #     title_msg = "List of ABC counters registered by the bot"
-        elif type_check == "b":
-            counter_list = beta_collection.aggregate([
-                {
-                    '$match':{'counter':True}
-                },
-                {
-                    '$project':{'name':1}
-                }
-            ])
-            for counter in counter_list:
-                msg += f"{counter['name']}\n"
-            title_msg = "List of AlphaBeta counters registered by the bot"
-        elif type_check == "vote":
-            counter_list = misc.find_one({"_id":"ogregister"},{"_id":0})
-            for user_id in counter_list:
-                if counter_list[f"{user_id}"] == True:
-                    user = ctx.guild.get_member(int(user_id))
-                    msg += f"{user}\n"
-            title_msg = "Counters who opted in for vote reminders"
-        else:
-            return
-        embedVar = Embed(title=title_msg,description=msg,color=color_lamuse)
-        await ctx.send(embed=embedVar)
+    @commands.command(name="checklist", aliases=["cl"])
+    async def command_checklist(self, ctx:Context,
+            type_check:typing.Literal["og", "b", "vote"]): #'a'
+        """Displays the list of people registered for different lists."""
+        await self.checklist(ctx, type_check)
 
     @nextcord.slash_command(name="checklist", guild_ids=servers)
     async def slash_checklist(self, ctx:Interaction,
             type_check:str = SlashOption(
                 description="List type",
-                choices=['og','b','vote'])): #'a'
+                choices=['og', 'b', 'vote'])): #'a'
+        """Displays the list of people registered for different lists."""
+        await self.checklist(ctx, type_check)
+
+    async def checklist(self, ctx:typing.Union[Context, Interaction],
+            type_check:typing.Literal["og", "b", "vote"]): #'a'
         """Displays the list of people registered to receive saves"""
         msg = ""
         if type_check == 'og':
@@ -313,11 +271,24 @@ class List(commands.Cog):
                 msg += f"{counter['name']}\n"
             title_msg = "List of AlphaBeta counters registered by the bot"
         elif type_check == "vote":
-            counter_list = misc.find_one({"_id":"ogregister"},{"_id":0})
-            for user_id in counter_list:
-                if counter_list[f"{user_id}"] == True:
-                    user = ctx.guild.get_member(int(user_id))
-                    msg += f"{user}\n"
+            counter_list = og_collection.aggregate([
+                {
+                    "$match": {
+                        "reminder": True
+                    }
+                }, {
+                    "$project": {
+                        "name": 1, 
+                        "dm": 1,
+                    }
+                }
+            ])
+            for counter in counter_list:
+                name = counter["name"]
+                if counter.get("dm", False):
+                    msg += f"{name}[DM]\n"
+                else:
+                    msg += f"{name}\n"
             title_msg = "Counters who opted in for vote reminders"
         else:
             return
@@ -325,4 +296,5 @@ class List(commands.Cog):
         await ctx.send(embed=embedVar)
 
 def setup(bot:commands.Bot):
+    """The setup command for the cog."""
     bot.add_cog(List(bot))

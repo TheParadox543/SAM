@@ -10,7 +10,6 @@ from nextcord.ui import View
 from bot_secrets import *
 from database import *
 
-
 class Stats(commands.Cog):
     """The cog containing the commnds to check the stats of the user."""
 
@@ -133,7 +132,7 @@ class Stats(commands.Cog):
     
     @commands.command(name="currentscore", aliases=["cs"])
     async def currentscore_command(self, ctx:Context,
-            mode:Literal["og", "classic", "numselli"],
+            mode:Literal["og", "classic", "numselli"]="og",
             page:int=1):
         """Shows the streak currentscores"""
         i = (page-1) * 10

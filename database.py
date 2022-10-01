@@ -1,5 +1,5 @@
 import certifi
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 
 from pymongo import MongoClient
 
@@ -78,3 +78,32 @@ roman = {
 EPOCH = datetime(1970, 1, 1, tzinfo=timezone.utc)
 
 ogreg_help = "Toggle for c!vote reminders. If you write DM as an option, bot will toggle reminders sent to your DM."
+
+dank_work_time = {
+    "Discord Mod": timedelta(minutes=40),
+    "Babysitter": timedelta(minutes=40),
+    "Fast Food Cook": timedelta(minutes=43),
+    "House Wife": timedelta(minutes=43),
+    "Twitch Streamer": timedelta(minutes=46),
+    "Youtuber": timedelta(minutes=46),
+    "Proffesional Hunter": timedelta(minutes=49),
+    "Professional Fisherman": timedelta(minutes=49),
+    "Bartender": timedelta(minutes=49),
+    "Robber": timedelta(minutes=49),
+    "Police Officer": timedelta(minutes=49),
+    "Teacher": timedelta(minutes=49),
+    "Musician": timedelta(minutes=49),
+    "Pro Gamer": timedelta(minutes=52),
+    "Manager": timedelta(minutes=52),
+    "Developer": timedelta(minutes=52),
+    "Day Trader": timedelta(minutes=55),
+    "Santa Claus": timedelta(minutes=55),
+    "Poltician": timedelta(minutes=55),
+    "Veterinarian": timedelta(minutes=55),
+    "Pharmacist": timedelta(minutes=55),
+    "Dank Memer Shopkeeper": timedelta(minutes=55),
+    "Lawyer": timedelta(minutes=58),
+    "Doctor": timedelta(minutes=58),
+    "Scientist": timedelta(minutes=58),
+    "Ghost": timedelta(minutes=58),
+}

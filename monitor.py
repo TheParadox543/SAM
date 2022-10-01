@@ -1471,79 +1471,35 @@ class Monitor(commands.Cog):
                 await message.channel.send(f"`Next is {next_num}`")
 
         """Functions for dank memer"""
-        if channel == dank_channel:
-            if author.id == dank_bot:
-                if message.mentions:
-                    userID = message.mentions[0].id
-                    register_list = dank_collection.find_one({"_id":"register"})
-                    if f"{userID}" in register_list:
-                        if register_list[f"{userID}"] == True:
-                            time_now = message.created_at.replace(tzinfo=None,microsecond=0)
-                            if re.search("You need to wait",content):
-                                nums = re.findall("\d+",content)
-                                try:
-                                    min, sec = int(nums[1]), int(nums[2])
-                                except:
-                                    return
-                                time_new = time_now + timedelta(minutes=min,seconds=sec)
-                                if dank_collection.find_one(
-                                    {
-                                        "user":userID,
-                                        "command":"go to work"
+        if author.id == dank_bot:
+            if message.interaction and message.embeds:
+                slash_data = message.interaction.data
+                if (slash_data["name"] == "work apply"
+                        or slash_data["name"] == "work shift"):
+                    embed_content = message.embeds[0].to_dict()
+                    if re.search("<t:", embed_content["description"]):
+                        user_id = int(slash_data["user"]["id"])
+                        if time_collection.find_one(
+                            {
+                                "user": user_id,
+                                "command": "work shift",
+                            }
+                        ):
+                            sec_str = re.findall("\d+", embed_content["description"])[0]
+                            time_next = EPOCH + timedelta(seconds=int(sec_str))
+                            time_collection.update_one(
+                                {
+                                    "user": user_id,
+                                    "command": "work shift",
+                                }, {
+                                    "$set": {
+                                        "time": time_next,
+                                        "channel": message.channel.id
                                     }
-                                ):
-                                    dank_collection.update_one(
-                                        {
-                                            "user":userID,
-                                            "command":"go to work"
-                                        }, {
-                                            "$set":
-                                            {
-                                                "time":time_new
-                                            }
-                                        }
-                                    )
-                                else:
-                                    dank_collection.insert_one(
-                                        {
-                                            "time":time_new,
-                                            "user":userID,
-                                            "command":"go to work"
-                                        }
-                                    )
-                            else:
-                                time_new = time_now + timedelta(hours=1)
-                                if dank_collection.find_one(
-                                    {
-                                        "user":userID,
-                                        "command":"go to work"
-                                    }
-                                ):
-                                    dank_collection.update_one(
-                                        {
-                                            "user":userID,
-                                            "command":"go to work"
-                                        }, {
-                                            "$set":
-                                            {
-                                                "time":time_new
-                                            }
-                                        }
-                                    )
-                                else:
-                                    dank_collection.insert_one(
-                                        {
-                                            "time":time_new,
-                                            "user":userID,
-                                            "command":"go to work"
-                                        }
-                                    )
-
-        # if channel == duck_channel:
-        #     if author.id == duck_bot:
-        #         if re.match("\-", content):
-        #             await message.channel.send(f"<@&{hunter_id}> ducks are here")
-        #         pass
+                                }
+                            )
+                            time_str = utils.format_dt(time_next, "t")
+                            await message.channel.send(f"Will remind you at {time_str}")
 
         """Functions related to user input"""
         if re.match("c!user",content,re.I):
@@ -1613,6 +1569,39 @@ class Monitor(commands.Cog):
         #     print(time_post)
         #     t1 = time - time_post["timetrial"]
         #     print(t1.total_seconds())
+
+    @commands.Cog.listener()
+    async def on_message_edit(self, before:Message, after:Message):
+        if after.interaction and after.author.id == dank_bot:
+            slash_data = before.interaction.data
+            if slash_data["name"] == "work shift":
+                embed_content = after.embeds[0].to_dict()
+                if "footer" in embed_content:
+                    user_id:int = slash_data["user"]["id"]
+                    if time_collection.find_one({
+                        "user": user_id,
+                        "command": "work shift"
+                    }):
+                        job = embed_content["footer"]["text"].split(" as a ")[1]
+                        if job != "":
+                            time_delta = dank_work_time[job]
+                        else:
+                            time_delta = timedelta(hours=1)
+                        time_next = (utils.utcnow().replace(microsecond=0) 
+                            + time_delta)
+                        time_collection.update_one(
+                            {
+                                "user": user_id,
+                                "command": "work shift"
+                            }, {
+                                "$set": {
+                                    "time": time_next,
+                                    "channel": before.channel.id
+                                }
+                            }
+                        )
+                        time_str = utils.format_dt(time_next, "t")
+                        await after.channel.send(f"Will remind at {time_str}")
 
     def letter_calc(self, word: str):
         """To calculate the value of word in abc channels"""
@@ -1812,6 +1801,7 @@ class Monitor(commands.Cog):
         if rem:
             field1 = embed_content["fields"][0]["value"]
             field2 = embed_content["fields"][1]["value"]
+            channel_id = message.channel.id
             if re.search("You have already", field1):
                 time1 = re.findall("[\d\.]+", field1)
                 hour1 = float(time1[1]) + 0.05
@@ -1831,7 +1821,8 @@ class Monitor(commands.Cog):
                             "$set":
                             {
                                 "time": time_new,
-                                "dm": dm
+                                "dm": dm,
+                                "channel": channel_id,
                             }
                         }
                     )
@@ -1841,7 +1832,8 @@ class Monitor(commands.Cog):
                             "time": time_new,
                             "user": user.id,
                             "command": "vote in Discords.com",
-                            "dm": dm
+                            "dm": dm,
+                            "channel": channel_id,
                         }
                     )
             if re.search("You have already", field2):
@@ -1863,7 +1855,8 @@ class Monitor(commands.Cog):
                             "$set":
                             {
                                 "time": time_new,
-                                "dm": dm
+                                "dm": dm,
+                                "channel": channel_id,
                             }
                         }
                     )
@@ -1873,7 +1866,8 @@ class Monitor(commands.Cog):
                             "time": time_new,
                             "user": user.id,
                             "command": "vote in top.gg", 
-                            "dm": dm
+                            "dm": dm,
+                            "channel": channel_id,
                         }
                     )
 
