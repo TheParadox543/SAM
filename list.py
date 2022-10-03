@@ -227,12 +227,12 @@ class List(commands.Cog):
     async def slash_checklist(self, ctx:Interaction,
             type_check:str = SlashOption(
                 description="List type",
-                choices=['og', 'b', 'vote'])): #'a'
+                choices=['og', 'b', 'vote'])):
         """Displays the list of people registered for different lists."""
         await self.checklist(ctx, type_check)
 
     async def checklist(self, ctx:Union[Context, Interaction],
-            type_check:Literal["og", "b", "vote"]): #'a'
+            type_check:Literal["og", "b", "vote"]):
         """Displays the list of people registered to receive saves"""
         msg = ""
         if type_check == 'og':
@@ -247,18 +247,6 @@ class List(commands.Cog):
             for counter in counter_list:
                 msg += f"{counter['name']}\n"
             title_msg = "List of og counters registered by the bot"
-        # elif type_check == "a":
-        #     counter_list = abc_collection.aggregate([
-        #         {
-        #             '$match':{'counter':True}
-        #         },
-        #         {
-        #             '$project':{'name':1}
-        #         }
-        #     ])
-        #     for counter in counter_list:
-        #         msg += f"{counter['name']}\n"
-        #     title_msg = "List of ABC counters registered by the bot"
         elif type_check == "b":
             counter_list = beta_collection.aggregate([
                 {
