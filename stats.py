@@ -26,14 +26,17 @@ class Stats(commands.Cog):
     async def user_command(self, ctx:Context, member:Member=None):
         """Displays user stats in the guild"""
         user = member or ctx.author
-        embedVar = Embed(title=f"User stats for {user}",color=color_lamuse)
+        embedVar = Embed(title=f"User stats for {user}", color=color_lamuse)
         embedVar.set_thumbnail(url=user.display_avatar)
         user_post = og_collection.find_one({"_id":user.id})
-        if user_post:
-            correct = user_post.get('correct',0)
-            wrong = user_post.get('wrong',0)
+        if user_post is not None:
+            correct = user_post.get("correct", 0)
+            wrong = user_post.get("wrong", 0)
             total = correct + wrong
-            daily = user_post.get('daily',0)
+            daily = user_post.get("daily", 0)
+            streak = user_post.get("streak", 0)
+            high = user_post.get("high", 0)
+            total_saves = user_post.get("total_saves", 3)
             if total == 0:
                 rate = 0
             else:
@@ -46,16 +49,18 @@ class Stats(commands.Cog):
             msg = f"Rate: {rate}%"
             msg += f"\nCorrect: {correct}"
             msg += f"\nWrong: {wrong}"
-            msg += f"\nSaves: {current_saves}/{user_post['total_saves']}"
-            msg += f"\n\nCurrent Streak: {user_post['streak']}"
-            msg += f"\nHighest Streak: {user_post['high']}"
+            msg += f"\nSaves: {current_saves}/{total_saves}"
+            msg += f"\n\nCurrent Streak: {streak}"
+            msg += f"\nHighest Streak: {high}"
             msg += f"\nDaily: {daily}" 
-            embedVar.add_field(name=mode_list["1"],value=msg)
+            embedVar.add_field(name=mode_list["1"], value=msg)
         user_post = classic_collection.find_one({"_id":user.id})
         if user_post:
             correct = user_post['correct']
             wrong = user_post.get('wrong',0)
             total = correct + wrong
+            streak = user_post.get("streak", 0)
+            high = user_post.get("high", 0)
             if total == 0:
                 rate = 0
             else:
@@ -64,49 +69,29 @@ class Stats(commands.Cog):
             msg = f"Rate: {str_rate}%"
             msg += f"\nCorrect: {correct}"
             msg += f"\nWrong: {wrong}"
-            msg += f"\n\n\nCurrent Streak: {user_post['streak']}"
-            msg += f"\nHighest Streak: {user_post['high']}"
-            embedVar.add_field(name=mode_list["2"],value=msg)
-        # user_post = abc_collection.find_one({"_id":user.id})
-        # if user_post:
-        #     correct = user_post['correct']
-        #     wrong = user_post.get('wrong',0)
-        #     total = correct + wrong
-        #     if total == 0:
-        #         rate = 0
-        #     else:
-        #         rate = round(float(correct/total)*100,2)
-        #     current_saves = user_post['current_saves']
-        #     if current_saves == int(current_saves):
-        #         current_saves = int(current_saves)
-        #     else:
-        #         current_saves = round(current_saves,2)
-        #     msg = f"Rate: {rate}%"
-        #     msg += f"\nCorrect: {correct}"
-        #     msg += f"\nWrong: {wrong}"
-        #     msg += f"\nSaves: {current_saves}/{user_post['total_saves']}"
-        #     msg += f"\n\nCurrent Streak: {user_post['streak']}"
-        #     msg += f"\nHighest Streak: {user_post['high']}"
-        #     embedVar.add_field(name=mode_list["3"],value=msg)
+            msg += f"\n\n\nCurrent Streak: {streak}"
+            msg += f"\nHighest Streak: {high}"
+            embedVar.add_field(name=mode_list["2"], value=msg)
         user_post = beta_collection.find_one({"_id":user.id})
         if user_post:
-            correct = user_post['correct']
-            wrong = user_post.get('wrong',0)
+            correct = user_post.get("correct", 0)
+            wrong = user_post.get('wrong', 0)
             total = correct + wrong
             if total == 0:
                 rate = 0
             else:
                 rate = round(float(correct/total)*100,2)
-            current_saves = user_post['current_saves']
+            current_saves = user_post.get('current_saves', 0)
             if current_saves == int(current_saves):
                 current_saves = int(current_saves)
             else:
-                current_saves = round(current_saves,2)
+                current_saves = round(current_saves, 2)
+            total_saves = user_post.get("total_saves", 5)
             msg = f"Rate: {rate}%"
             msg += f"\nCorrect: {correct}"
             msg += f"\nWrong: {wrong}"
-            msg += f"\nSaves: {current_saves}/{user_post['total_saves']}"
-            embedVar.add_field(name=mode_list["4"],value=msg)
+            msg += f"\nSaves: {current_saves}/{total_saves}"
+            embedVar.add_field(name=mode_list["4"], value=msg)
         user_post = numselli_collection.find_one({"_id":user.id})
         if user_post:
             correct = user_post['correct']
@@ -124,10 +109,10 @@ class Stats(commands.Cog):
             msg = f"Rate: {rate}%"
             msg += f"\nCorrect: {correct}"
             msg += f"\nWrong: {wrong}"
-            msg += f"\nSaves: {current_saves}/{user_post['total_saves']}"
-            msg += f"\n\nCurrent Streak: {user_post.get('streak',0)}"
-            msg += f"\nHighest Streak: {user_post.get('high',0)}"
-            embedVar.add_field(name=mode_list["5"],value=msg)
+            msg += f"\nSaves: {current_saves}/{user_post.get('total_saves', 2)}"
+            msg += f"\n\nCurrent Streak: {user_post.get('streak', 0)}"
+            msg += f"\nHighest Streak: {user_post.get('high', 0)}"
+            embedVar.add_field(name=mode_list["5"], value=msg)
         user_post = yoda_collection.find_one({"_id": user.id})
         if user_post:
             correct = user_post.get("correct", 0)
@@ -146,8 +131,8 @@ class Stats(commands.Cog):
             msg += f"\nCorrect: {correct}"
             msg += f"\nWrong: {wrong}"
             msg += f"\nTokens: {tokens}/2"
-            # msg += f"\n\nCurrent Streak: {user_post.get('streak',0)}"
-            # msg += f"\nHighest Streak: {user_post.get('high',0)}"
+            msg += f"\n\nCurrent Streak: {user_post.get('streak', 0)}"
+            msg += f"\nHighest Streak: {user_post.get('high', 0)}"
             embedVar.add_field(name=mode_list["6"], value=msg)
         await ctx.send(embed=embedVar)
 
@@ -186,12 +171,6 @@ class Stats(commands.Cog):
                 }
             ).sort("streak",-1).skip(i).limit(10)
             title_msg = "Current streaks for classic counting"
-        # elif mode == "abc":
-        #     counter_cursor = abc_collection.find(
-        #         {},
-        #         {'name':1,'streak':1,'_id':0}
-        #     ).sort("streak",-1).skip(i).limit(10)
-        #     title_msg = "Current streaks for abc counting"
         elif mode == "numselli":
             counter_cursor = numselli_collection.find(
                 {
@@ -293,27 +272,6 @@ class Stats(commands.Cog):
                         }
                     )
                     page = int(counter_num/10)
-        # elif mode == "abc":
-        #     title_msg = "Current streaks for ABC counting"
-        #     while msg == "":
-        #         i = (page - 1) * 10
-        #         counter_cursor = abc_collection.find(
-        #             {'streak':{"$gte":1}},
-        #             {'name':1,'streak':1,'_id':0}
-        #         ).sort("streak",-1).skip(i).limit(10)
-        #         for counter in counter_cursor:
-        #             i+=1
-        #             msg += f"{i}. {counter['name']} - {counter['streak']}\n"
-        #         if msg=="":
-        #             counter_num = abc_collection.count_documents(
-        #                 {
-        #                     'streak':
-        #                     {
-        #                         '$gte':1
-        #                     }
-        #                 }
-        #             )
-        #             page = int(counter_num/10)
         elif mode == "numselli":
             title_msg = "Current streaks for numselli counting"
             while msg == "":
@@ -386,12 +344,6 @@ class Stats(commands.Cog):
                 }
             ).sort("high",-1).skip(i).limit(10)
             title_msg = "Highest streaks for classic counting"
-        # elif mode == 3:
-        #     counter_cursor = abc_collection.find(
-        #         {},
-        #         {'name':1,'high':1,'_id':0}
-        #     ).sort("high",-1).skip(i).limit(10)
-        #     title_msg = "Highest streaks for abc counting"
         elif mode == "numselli":
             counter_cursor = numselli_collection.find(
                 {
@@ -492,27 +444,6 @@ class Stats(commands.Cog):
                         }
                     )
                     page = int(counter_num/10)
-        # elif mode == "abc":
-        #     title_msg = "Highest streaks for ABC counting"
-        #     while msg == "":
-        #         i = (page - 1) * 10
-        #         counter_cursor = abc_collection.find(
-        #             {'high':{"$gte":1}},
-        #             {'name':1,'high':1,'_id':0}
-        #         ).sort("high",-1).skip(i).limit(10)
-        #         for counter in counter_cursor:
-        #             i+=1
-        #             msg += f"{i}. {counter['name']} - {counter['high']}\n"
-        #         if msg=="":
-        #             counter_num = abc_collection.count_documents(
-        #                 {
-        #                     'high':
-        #                     {
-        #                         '$gte':1
-        #                     }
-        #                 }
-        #             )
-        #             page = int(counter_num/10)
         elif mode == "numselli":
             title_msg = "Highest streaks for numselli counting"
             while msg == "":
@@ -565,8 +496,8 @@ class Stats(commands.Cog):
             }
         )
         if user_post:
-            correct = user_post['correct']
-            wrong = user_post.get('wrong',0)
+            correct = user_post.get("correct", 0)
+            wrong = user_post.get('wrong', 0)
             total = correct + wrong
             rate = round(float(correct/total),5)
             if rate >= 0.9998:

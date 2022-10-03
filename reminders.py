@@ -54,11 +54,13 @@ class Reminders(commands.Cog):
         if dm is not None:
             if dm is False:
                 og_collection.update_one({"_id": user_id},
-                    {"$set": {
-                        "reminder": True,
-                        "dm": True
+                    {
+                        "$set": {
+                            "reminder": True,
+                            "dm": True
+                        }
                     }
-                })
+                )
                 msg = f"<@{user_id}> will now get vote reminders in DM."
             else:
                 og_collection.update_one({"_id": user_id},

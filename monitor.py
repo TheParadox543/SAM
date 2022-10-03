@@ -45,7 +45,7 @@ class Monitor(commands.Cog):
         self.og_count = 0
 
     @commands.Cog.listener()
-    async def on_message(self, message:nextcord.Message):
+    async def on_message(self, message:Message):
         if message.author == self.bot.user: #ignores if message from bot
             return
 
@@ -292,48 +292,6 @@ class Monitor(commands.Cog):
                             "high":1
                         }
                     )
-            # elif channel == abc_channel and re.match("[a-zA-Z]", number_str):
-            #     number = letter_calc(number_str)
-            #     if abc_collection.find_one({"_id":user_id}):
-            #         user_post = abc_collection.find_one(
-            #             {"_id":user_id},
-            #             {"streak":1,"high":1}
-            #         )
-            #         if user_post['streak'] == user_post['high']:
-            #             abc_collection.update_one(
-            #                 {"_id":user_id},
-            #                 {
-            #                     "$inc":{"streak":1,"high":1,"correct":1}
-            #                 }
-            #             )
-            #             if (user_post['streak']+1)%500==0:
-            #                 msg_s = f"n{(user['streak']+1)}"
-            #         else:
-            #             abc_collection.update_one(
-            #                 {"_id":user_id},
-            #                 {
-            #                     "$inc":{"streak":1,"correct":1}
-            #                 }
-            #             )
-            #             if (user_post['streak']+1)%500==0:
-            #                 msg_s = f"{(user['streak']+1)}"
-            #         mode = "3"
-            #     elif author.id == 789949322032316416:
-            #         pass
-            #     else:
-            #         abc_collection.insert_one(
-            #             {
-            #                 "_id":user_id,
-            #                 "name":f"{author}",
-            #                 "correct":1,
-            #                 "wrong":0,
-            #                 "current_saves":1,
-            #                 "total_saves":5,
-            #                 "streak":1,
-            #                 "high":1,
-            #                 "counter":False
-            #             }
-            #         )
             elif channel == beta_channel and re.match("[a-zA-Z]",number_str):
                 try:
                     number = self.letter_calc(number_str)
@@ -511,6 +469,122 @@ class Monitor(commands.Cog):
                             if (user_post['streak']+1)%500==0:
                                 msg_s = f"{(user_post['streak']+1)}"
                     mode = "5"
+            elif channel == yoda_channel and re.match("\d", number_str):
+                try:
+                    number = int(number_str)
+                except:
+                    return
+                if number == 0:
+                    pass
+                user_post = yoda_collection.find_one(
+                    {
+                        "_id":user_id
+                    }, {
+                        "streak":1,
+                        "high":1,
+                        "alt":1
+                    }
+                )
+                if user_post:
+                    if "alt" in user_post:
+                        user_main = user_post.get("alt")
+                        user = guild.get_member(user_main)
+                        user_post2:dict = yoda_collection.find_one(
+                            {
+                                "_id":user_main
+                            }, {
+                                "streak":1,
+                                "high":1
+                            }
+                        )
+                        if user_post2['streak'] == user_post2['high']:
+                            yoda_collection.update_one(
+                                {
+                                    "_id":user_main
+                                }, {
+                                    "$inc":
+                                    {
+                                        "streak":1,
+                                        "high":1,
+                                    }
+                                }
+                            )
+                            if (user_post2['streak']+1)%500==0:
+                                msg_s = f"n{(user_post2['streak']+1)}"
+                        else:
+                            yoda_collection.update_one(
+                                {
+                                    "_id":user_main
+                                }, {
+                                    "$inc":
+                                    {
+                                        "streak":1
+                                    }
+                                }
+                            )
+                            if (user_post2['streak']+1)%500==0:
+                                msg_s = f"{(user_post2['streak']+1)}"
+                        yoda_collection.update_one(
+                            {
+                                "_id":user_id
+                            }, {
+                                "$inc":
+                                {
+                                    "correct":1
+                                }
+                            }
+                        )
+                    else:
+                        if user_post['streak'] == user_post['high']:
+                            yoda_collection.update_one(
+                                {
+                                    "_id":user_id
+                                }, {
+                                    "$inc":
+                                    {
+                                        "streak":1,
+                                        "high":1,
+                                        "correct":1
+                                    }
+                                }
+                            )
+                            if (user_post['streak']+1)%500==0:
+                                msg_s = f"n{(user_post['streak']+1)}"
+                        else:
+                            yoda_collection.update_one(
+                                {
+                                    "_id":user_id
+                                }, {
+                                    "$inc":
+                                    {
+                                        "streak":1,
+                                        "correct":1
+                                    }
+                                }
+                            )
+                            if (user_post['streak']+1)%500==0:
+                                msg_s = f"{(user_post['streak']+1)}"
+                    mode = "6"
+                else:
+                    yoda_collection.insert_one(
+                        {
+                            "_id":user_id,
+                            "name":f"{author}",
+                            "correct":1,
+                            "wrong":0,
+                            "streak":1,
+                            "high":1
+                        }
+                    )
+                misc.update_one(
+                    {
+                        "_id": "yoda count",
+                    }, {
+                        "$set": {
+                            "last_counter": user_id,
+                        }
+                    }, True
+                )
             else: 
                 return
             rev_num = number_str[::-1]
@@ -795,48 +869,6 @@ class Monitor(commands.Cog):
                                 }
                             )
                     mode="2"
-                # elif channel == abc_channel and author.id == abc_bot:
-                #     user_post = abc_collection.find_one(
-                #         {"_id":user_id},
-                #         {"streak":1,"high":1}
-                #     )
-                #     final_streak = user_post['streak'] - 1
-                #     if user_post['streak'] == user_post['high']:
-                #         abc_collection.update_one(
-                #             {
-                #                 "_id":user_id
-                #             }, {
-                #                 "$inc":
-                #                 {
-                #                     "high":-1,
-                #                     "wrong":1,
-                #                     "correct":-1,
-                #                     "current_saves":-1
-                #                 },
-                #                 "$set":
-                #                 {
-                #                     "streak":0
-                #                 }
-                #             }
-                #         )
-                #     else:
-                #         abc_collection.update_one(
-                #             {
-                #                 "_id":user_id
-                #             }, {
-                #                 "$inc":
-                #                 {
-                #                     "wrong":1,
-                #                     "correct":-1,
-                #                     "current_saves":-1
-                #                 },
-                #                 "$set":
-                #                 {
-                #                     "streak":0
-                #                 }
-                #             }
-                #         )
-                #     mode="3"
                 elif channel == beta_channel and author.id == beta_bot:
                     beta_collection.update_one(
                         {
@@ -864,80 +896,128 @@ class Monitor(commands.Cog):
                     color=color_lamuse
                 )
                 await scores.send(embed=embedVar)
-        """If mistake is made in numselli bot"""
+        """If mistake is made in numselli bot, handled by numselli embed handler."""
+
+        ## If mistake made in yoda.
+        if (author.id == yoda_bot and content.startswith("Failed you may ")):
+            last_counter:Union[dict, None] = misc.find_one(
+                {
+                    "_id":"yoda count"
+                }
+            )
+            if last_counter is None:
+                return
+            counter_id:int = last_counter.get("last_counter")
+            counter_post = yoda_collection.find_one(
+                {
+                    "_id": counter_id
+                }, {
+                    "streak":1,
+                    "high":1,
+                    "alt":1
+                }
+            )
+            if "alt" in counter_post:
+                user_main = counter_post["alt"]
+                user = guild.get_member(user_main)
+                counter_post2 = yoda_collection.find_one(
+                    {
+                        "_id":user_main
+                    }, {
+                        "streak":1,
+                        "high":1
+                    }
+                )
+                final_streak = counter_post2["streak"] - 1
+                if counter_post2['streak'] == counter_post2['high']:
+                    yoda_collection.update_one(
+                        {
+                            "_id":user_main
+                        }, {
+                            "$inc":
+                            {
+                                "high":-1
+                            },
+                            "$set":
+                            {
+                                "streak":0
+                            }
+                        }
+                    )
+                else:
+                    yoda_collection.update_one(
+                        {
+                            "_id":user_main
+                        }, {
+                            "$set":
+                            {
+                                "streak":0
+                            }
+                        }
+                    )
+                yoda_collection.update_one(
+                    {
+                        "_id":counter_id
+                    }, {
+                        "$inc":
+                        {
+                            "correct":-1,
+                            "wrong":1
+                        }
+                    }
+                )
+            else:
+                final_streak = counter_post['streak'] - 1
+                if counter_post['streak'] == counter_post['high']:
+                    yoda_collection.update_one(
+                        {
+                            "_id":counter_id
+                        }, {
+                            "$inc":
+                            {
+                                "high":-1,
+                                "wrong":1,
+                                "correct":-1
+                            },
+                            "$set":
+                            {
+                                "streak":0
+                            }
+                        }
+                    )
+                else:
+                    yoda_collection.update_one(
+                        {"_id":counter_id},
+                        {
+                            "$inc":
+                            {
+                                "wrong":1,
+                                "correct":-1
+                            },
+                            "$set":
+                            {
+                                "streak":1
+                            }
+                        }
+                    )
+            mode="6"
+            counter = guild.get_member(counter_id)
+            scores = self.bot.get_channel(sam_channel)
+            msg = f"**{counter.display_name}**'s streak with "
+            msg += f"{mode_list[mode]} has been reset from "
+            msg += f"**{final_streak}** to 0"
+            embedVar = Embed(
+                title="Streak Ruined",
+                description=msg,
+                color=color_lamuse
+            )
+            await scores.send(embed=embedVar)
 
         """All functions related to og bot"""
         if author.id == og_bot:
             if message.embeds:
                 embed_content = message.embeds[0].to_dict()
-                if 'fields' in embed_content:
-                    if embed_content['fields'][0]['name'] == "Global Stats":
-                        user_test = misc.find_one({"_id":"c!user"})
-                        user = guild.get_member(user_test['user'])
-                        if user:
-                            desc = embed_content['fields'][0]['value']
-                            correct = desc.split("**")[3]
-                            wrong = desc.split("**")[5]
-                            saves = desc.split("**")[9]
-                            current_saves = float(saves.split("/")[0])
-                            total_saves = int(saves.split("/")[1])
-                            cor = wro = 0
-                            for i in correct.split(","):
-                                cor = cor * 1000 + int(i)
-                            for i in wrong.split(","):
-                                wro = wro * 1000 + int(i)
-                            if og_collection.find_one({"_id":user.id}):
-                                og_collection.update_one(
-                                    {
-                                        "_id":user.id
-                                    },
-                                    {
-                                        "$set":
-                                        {
-                                            "name":f"{user}",
-                                            "correct":cor,
-                                            "wrong":wro,
-                                            "current_saves":current_saves,
-                                            "total_saves":total_saves
-                                        }
-                                    }
-                            )
-                            else:
-                                og_collection.insert_one(
-                                    {
-                                        "_id":user.id,
-                                        "name":f"{user}",
-                                        "correct":cor,
-                                        "wrong":wro,
-                                        "current_saves":current_saves,
-                                        "total_saves":total_saves,
-                                        "streak":0,
-                                        "high":0,
-                                        "counter":False
-                                    }
-                                )
-                            og_save:Role = guild.get_role(og_save_id)
-                            dishonorable:Role = guild.get_role(dishonorable_id)
-                            if dishonorable in user.roles:
-                                await user.remove_roles(og_save)
-                                await message.add_reaction("❌")
-                            elif current_saves >= 1:
-                                if og_save in user.roles:
-                                    await message.add_reaction("✅")
-                                else:
-                                    await user.add_roles(og_save)
-                                    msg = f"<@{user.id}> can now "
-                                    msg += f"count in <#{og_channel}>"
-                                    await message.channel.send(msg)
-                            else:
-                                if og_save in user.roles:
-                                    await user.remove_roles(og_save)
-                                    msg = f"<@{user.id}> doesn't have enough saves "
-                                    msg += f"and cannot count in <#{og_channel}>"
-                                    await message.channel.send(msg)
-                                else:
-                                    await message.add_reaction("❌")
-                elif 'description' in embed_content.keys():
+                if 'description' in embed_content:
                     descript = embed_content['description']
                     if re.findall("saves have been deducted",descript):
                         user_post = misc.find_one({"_id":"c!transfersave"})
@@ -991,168 +1071,21 @@ class Monitor(commands.Cog):
                             cor = cor * 1000 + int(i)
                         for i in wrong.split(","):
                             wro = wro * 1000 + int(i)
-                        if classic_collection.find_one({"_id":user.id}):
-                            classic_collection.update_one(
-                                {"_id":user.id},
+                        classic_collection.update_one(
+                            {"_id":user.id},
+                            {
+                                "$set":
                                 {
-                                    "$set":
-                                    {
-                                        "name":f"{user}",
-                                        "correct":cor,
-                                        "wrong":wro
-                                    }
-                                }
-                            )
-                        else:
-                            classic_collection.insert_one(
-                                {
-                                    "_id":user.id,
                                     "name":f"{user}",
                                     "correct":cor,
-                                    "wrong":wro,
-                                    "streak":0,
-                                    "high":0
+                                    "wrong":wro
                                 }
-                            )
-
-        """All function related to ABC Counting"""
-        # if author.id == abc_bot:
-        #     if message.embeds:
-        #         embed_content = message.embeds[0].to_dict()
-        #         title = embed_content['title']
-        #         if re.findall('stats',title):
-        #             if embed_content['fields'][3]['name']=="Saves":
-        #                 name = title[:-8]
-        #                 user = guild.get_member_named(name)
-        #                 if user:
-        #                     field_content = embed_content['fields'][3]
-        #                     current_saves = float(field_content['value'].split("/")[0][1:])
-        #                     if current_saves == int(current_saves):
-        #                         current_saves = int(current_saves)
-        #                     total_saves = int(field_content['value'].split("/")[1][:-1])
-        #                     correct = int(re.split(" ",embed_content['fields'][0]['value'])[0][1:])
-        #                     wrong = int(embed_content['fields'][1]['value'][1:-1])
-        #                     if abc_collection.find_one({"_id":user.id}):
-        #                         abc_collection.update_one(
-        #                             {"_id":user.id},
-        #                             {
-        #                                 "$set":
-        #                                 {
-        #                                     "name":f"{user}",
-        #                                     "correct":correct,
-        #                                     "wrong":wrong,
-        #                                     "current_saves":current_saves,
-        #                                     "total_saves":total_saves
-        #                                 }
-        #                             }
-        #                         )
-        #                     else:
-        #                         abc_collection.insert_one(
-        #                             {
-        #                                 "_id":user.id,
-        #                                 "name":f"{user}",
-        #                                 "correct":correct,
-        #                                 "wrong":wrong,
-        #                                 "current_saves":current_saves,
-        #                                 "total_saves":total_saves,
-        #                                 "streak":0,
-        #                                 "high":0,
-        #                                 "counter":False
-        #                             }
-        #                         )
-        #     elif re.match("You bought that item recently.",content):
-        #         time = re.findall("\d+",content)
-        #         user = misc.find_one({"_id":"abc!shop"})
-        #         time_now = datetime.utcnow()
-        #         time_new = time_now + timedelta(hours=int(time[0]),minutes=int(time[1]))
-        #         time_new= time_new.replace(tzinfo=None,microsecond=0)
-        #         if time_collection.find_one({"user":user['user'],"command":"use abc!shop"}):
-        #             time_collection.update_one(
-        #                 {
-        #                     "user":user['user'],
-        #                     "command":"use abc!shop"
-        #                 }, {
-        #                     "$set":
-        #                     {
-        #                         "time":time_new
-        #                     }
-        #                 }
-        #             )
-        #         else:
-        #             time_collection.insert_one(
-        #                 {
-        #                     "time":time_new,
-        #                     "user":user['user'],
-        #                     "command":"use abc!shop"
-        #                 }
-        #             )
+                            }, True
+                        )
 
         """All functions related to Beta Counting"""
         if author.id == beta_bot:
-            if message.embeds:
-                embed_content = message.embeds[0].to_dict()
-                title = embed_content['title']
-                if re.findall('stats',title):
-                    if embed_content['fields'][3]['name']=="Saves":
-                        user_test = misc.find_one({"_id":"abc?u"})
-                        user = guild.get_member(user_test['user'])
-                        if user:
-                            field_content = embed_content['fields'][3]
-                            current_saves = float(field_content['value'].split("/")[0][1:])
-                            if current_saves == int(current_saves):
-                                current_saves = int(current_saves)
-                            total_saves = int(field_content['value'].split("/")[1][:-1])
-                            correct = int(re.split(" ",embed_content['fields'][0]['value'])[0][1:])
-                            wrong = int(embed_content['fields'][1]['value'][1:-1])
-                            if beta_collection.find_one({"_id":user_test['user']}):
-                                beta_collection.update_one(
-                                    {
-                                        "_id":user.id
-                                    }, {
-                                        "$set":
-                                        {
-                                            "name":f"{user}",
-                                            "correct":correct,
-                                            "wrong":wrong,
-                                            "current_saves":current_saves,
-                                            "total_saves":total_saves
-                                        }
-                                    }
-                                )
-                            else:
-                                beta_collection.insert_one(
-                                    {
-                                        "_id":user.id,
-                                        "name":f"{user}",
-                                        "correct":correct,
-                                        "wrong":wrong,
-                                        "current_saves":current_saves,
-                                        "total_saves":total_saves,
-                                        "counter":False
-                                    }
-                                )
-                            beta_save:Role = guild.get_role(beta_save_id)
-                            dishonorable:Role = guild.get_role(dishonorable_id)
-                            if dishonorable in user.roles:
-                                await user.remove_roles(beta_save)
-                                await message.add_reaction("❌")
-                            elif current_saves >= 1:
-                                if beta_save in user.roles:
-                                    await message.add_reaction("✅")
-                                else:
-                                    await user.add_roles(beta_save)
-                                    msg = f"<@{user.id}> can now "
-                                    msg += f"count in <#{beta_channel}>"
-                                    await message.channel.send(msg)
-                            else:
-                                if beta_save in user.roles:
-                                    await user.remove_roles(beta_save)
-                                    msg = f"<@{user.id} doesn't have enough saves "
-                                    msg += f"and cannot count in <#{beta_channel}"
-                                    await message.channel.send(msg)
-                                else:
-                                    await message.add_reaction("❌")
-            elif re.findall("Try again" ,content):
+            if re.findall("Try again" ,content):
                 time = re.findall("\d+",content)
                 user = misc.find_one({"_id":"abc?d"})
                 time_now = datetime.utcnow().replace(microsecond=0)
@@ -1253,35 +1186,20 @@ class Monitor(commands.Cog):
                         total_saves = int(nums[5])
                         user = guild.get_member_named(name)
                         if user:
-                            if numselli_collection.find_one({"_id":user.id}):
-                                numselli_collection.update_one(
+                            numselli_collection.update_one(
+                                {
+                                    "_id":user.id
+                                }, {
+                                    "$set":
                                     {
-                                        "_id":user.id
-                                    }, {
-                                        "$set":
-                                        {
-                                            "name":f"{user}",
-                                            "correct":correct,
-                                            "wrong":wrong,
-                                            "current_saves":current_saves,
-                                            "total_saves":total_saves
-                                        }
-                                    }
-                                )
-                            else:
-                                numselli_collection.insert_one(
-                                    {
-                                        "_id":user.id,
                                         "name":f"{user}",
                                         "correct":correct,
                                         "wrong":wrong,
                                         "current_saves":current_saves,
-                                        "total_saves":total_saves,
-                                        "streak":0,
-                                        "high":0,
-                                        "counter":False
+                                        "total_saves":total_saves
                                     }
-                                )
+                                }, True
+                            )
                             have_save:Role = guild.get_role(have_save_id)
                             dishonorable:Role = guild.get_role(dishonorable_id)
                             if dishonorable in user.roles:
@@ -1442,34 +1360,6 @@ class Monitor(commands.Cog):
                     )
                     await scores.send(embed=embedVar)
 
-        """For generating the next prime number"""
-        if channel == prime_channel and re.match("\d", content):
-            try:
-                num = int(content.split()[0])
-            except:
-                return
-
-            def prime(num:int):
-                f = False
-                for i in range(3,int(math.sqrt(num))+1,2):
-                    if num % i ==0:
-                        f = True
-                return f
-
-            def next_prime(num:int):
-                f = True
-                while(f):
-                    if num > 2:
-                        num += 2
-                    else:
-                        num += 1
-                    f = prime(num)
-                return num
-
-            if num == 2 or (num % 2 == 1 and num > 2):
-                next_num = next_prime(num)
-                await message.channel.send(f"`Next is {next_num}`")
-
         """Functions for dank memer"""
         if author.id == dank_bot:
             if message.interaction and message.embeds:
@@ -1502,46 +1392,69 @@ class Monitor(commands.Cog):
                             await message.channel.send(f"Will remind you at {time_str}")
 
         """Functions related to user input"""
-        if re.match("c!user",content,re.I):
+        if re.match("c!user", content, re.I):
             user = re.search("\d+",content)
             if user:
-                userID = int(user.group())
+                user_id = int(user.group())
             else:
-                userID = int(author.id)
-            if misc.find_one({"_id":"c!user"}):
-                misc.update_one({"_id":"c!user"}, {"$set":{"user":userID}})
+                user_id = int(author.id)
+
+            def og_user_check(msg:Message):
+                bool = False
+                if msg.embeds and msg.author.id == og_bot:
+                    embed_content = msg.embeds[0].to_dict()
+                    if ("fields" in embed_content and 
+                            embed_content["fields"][0]["name"]=="Global Stats"):
+                        bool = True
+                return bool
+            try:
+                og_msg:Message = await self.bot.wait_for("message", 
+                    check=og_user_check, timeout=10)
+            except asyncio.TimeoutError:
+                await message.channel.send("Failed to read `counting` embed.")
             else:
-                misc.insert_one({"_id":"c!user","user":userID})
+                await self.og_user_update(message, og_msg)
+
         if re.match("c!vote", content, re.I):
-            def check(message:Message):
+            def og_vote_check(message:Message):
                 return message.author.id == og_bot and message.embeds
             try:
-                msg:Message = await self.bot.wait_for("message", 
-                    check=check, timeout=5)
+                og_msg:Message = await self.bot.wait_for("message", 
+                    check=og_vote_check, timeout=5)
             except asyncio.TimeoutError:
                 await message.channel.send("Failed to read vote embed.")
             else:
-                await self.vote_update(message, msg)
+                await self.vote_update(message, og_msg)
+
         if re.match("c!transfersave",content,re.I):
             if misc.find_one({"_id":"c!transfersave"}):
                 misc.update_one({"_id":"c!transfersave"}, {"$set":{"user":author.id}})
             else:
                 misc.insert_one({"_id":"c!transfersave","user":author.id})
+
         if re.match("abc\?u",content):
             user = re.search("\d+",content)
             if user:
-                userID = int(user.group())
+                user_id = int(user.group())
             else:
-                userID = int(author.id)
-            if misc.find_one({"_id":"abc?u"}):
-                misc.update_one({"_id":"abc?u"}, {"$set":{"user":userID}})
+                user_id = int(author.id)
+
+            def beta_check(msg:Message):
+                return msg.author.id == beta_bot and msg.embeds
+            try:
+                beta_msg = await self.bot.wait_for("message", 
+                    check=beta_check, timeout=3)
+            except asyncio.TimeoutError:
+                await message.channel.send("Failed to read `beta` embed.")
             else:
-                misc.insert_one({"_id":"abc?u","user":userID})
+                await self.beta_update(message, beta_msg, user_id)
+
         if re.match("abc\?d",content,re.I):
             if misc.find_one({"_id":"abc?d"}):
                 misc.update_one({"_id":"abc?d"}, {"$set":{"user":author.id}})
             else:
                 misc.insert_one({"_id":"abc?d","user":author.id})
+
         if re.match("abc\?gift",content):
             user = re.search("\d+",content)
             if user:
@@ -1550,6 +1463,7 @@ class Monitor(commands.Cog):
                     misc.update_one({"_id":"abc?gift"}, {"$set":{"user":userID}})
                 else:
                     misc.insert_one({"_id":"abc?gift","user":userID})
+
         if content.startswith("y!userstats"):
             def check(m:Message):
                 return m.author.id==yoda_bot and m.embeds
@@ -1560,25 +1474,13 @@ class Monitor(commands.Cog):
                 await message.channel.send("Failed to read yoda embed.")
             else:
                 self.yoda_update(yoda_message, author)
-        # if re.match("abc!shop",content,re.I):
-        #     if misc.find_one({"_id":"abc!shop"}):
-        #         misc.update_one({"_id":"abc!shop"}, {"$set":{"user":author.id}})
-        #     else:
-        #         misc.insert_one({"_id":"abc!shop","user":author.id})
+
         if len(content) > 0 and content[0] == ":" and content[-1] == ":":
             emoji_name = content[1:-1]
             for emoji in guild.emojis:
                 if emoji_name == emoji.name:
                     await message.reply(str(emoji))
                     break
-
-        # if message.channel.id == 931498728760672276:
-        #     time = message.created_at.replace(tzinfo=None,microsecond=0)
-        #     print(time)
-        #     time_post = misc.find_one({"_id":"trial"})
-        #     print(time_post)
-        #     t1 = time - time_post["timetrial"]
-        #     print(t1.total_seconds())
 
     @commands.Cog.listener()
     async def on_message_edit(self, before:Message, after:Message):
@@ -1654,9 +1556,6 @@ class Monitor(commands.Cog):
                 return
             channel = self.bot.get_channel(prime_channel)
             role = member_new.guild.get_role(countaholic_id)
-        # elif member_new.id == sasha_bot:
-        #     channel = bot.get_channel(sasha_channel)
-        #     role = member_new.guild.get_role(countaholic_id)
         elif member_new.id == numselli_bot :
             role = member_new.guild.get_role(have_save_id)
         else:
@@ -1710,7 +1609,7 @@ class Monitor(commands.Cog):
 
     @commands.command(name="run")
     async def command_run(self, ctx:commands.Context):
-        """Gives the time when the run started"""
+        """Gives the time when the run started."""
         await self.run(ctx)
 
     @nextcord.slash_command(name="run", guild_ids=servers)
@@ -1719,9 +1618,7 @@ class Monitor(commands.Cog):
         await self.run(ctx)
 
     async def run(self, ctx:Union[commands.Context, Interaction]):
-        """
-        The method used to run both slash and prefix command of run.
-        """
+        """The method used to run both slash and prefix command of run."""
         time_now = utils.utcnow()
         if self.og_last_count == EPOCH:
             msg = "Can't tell run time."
@@ -1760,15 +1657,66 @@ class Monitor(commands.Cog):
 
         await ctx.send(msg)
 
-    async def vote_update(self, message:Message, msg:Message):
+    async def og_user_update(self, message:Message, og_message:Message):
+        """Update og stats of the user after seeing c!user."""
+        embed_content = og_message.embeds[0].to_dict()
+        guild = og_message.guild
+        user = guild.get_member_named(embed_content["title"])
+        if user:
+            desc = embed_content["fields"][0]["value"]
+            correct = desc.split("**")[3]
+            wrong = desc.split("**")[5]
+            saves = desc.split("**")[9]
+            current_saves = float(saves.split("/")[0])
+            total_saves = int(saves.split("/")[1])
+            cor = wro = 0
+            for i in correct.split(","):
+                cor = cor * 1000 + int(i)
+            for i in wrong.split(","):
+                wro = wro * 1000 + int(i)
+            og_collection.update_one(
+                {
+                    "_id":user.id
+                }, {
+                    "$set": {
+                        "name":f"{user}",
+                        "correct":cor,
+                        "wrong":wro,
+                        "current_saves":current_saves,
+                        "total_saves":total_saves
+                    }
+                }, True
+            )
+            og_save:Role = guild.get_role(og_save_id)
+            dishonorable:Role = guild.get_role(dishonorable_id)
+            if dishonorable in user.roles:
+                await user.remove_roles(og_save)
+                await og_message.add_reaction("❌")
+            elif current_saves >= 1:
+                if og_save in user.roles:
+                    await og_message.add_reaction("✅")
+                else:
+                    await user.add_roles(og_save)
+                    msg = f"<@{user.id}> can now count in <#{og_channel}>"
+                    await message.channel.send(msg)
+            else:
+                if og_save in user.roles:
+                    await user.remove_roles(og_save)
+                    msg = f"<@{user.id}> doesn't have enough saves "
+                    msg += f"and cannot count in <#{og_channel}>"
+                    await message.channel.send(msg)
+                else:
+                    await og_message.add_reaction("❌")
+
+    async def vote_update(self, message:Message, og_msg:Message):
         """Update vote stats after using c!vote."""
-        embed_content = msg.embeds[0].to_dict()
+        embed_content = og_msg.embeds[0].to_dict()
         descript = embed_content["description"]
         saves = descript.split("**")[1]
         current_saves = float(saves.split("/")[0])
         total_saves = int(saves.split("/")[1])
-        ogsave = msg.guild.get_role(og_save_id)
-        dishonorable = msg.guild.get_role(dishonorable_id)
+        ogsave = og_msg.guild.get_role(og_save_id)
+        dishonorable = og_msg.guild.get_role(dishonorable_id)
         user = message.author
         counter_post = og_collection.find_one({"_id": user.id})
         if counter_post is not None:
@@ -1789,7 +1737,7 @@ class Monitor(commands.Cog):
             return
         if dishonorable in user.roles:
             await user.remove_roles(ogsave)
-            await msg.add_reaction("❌")
+            await og_msg.add_reaction("❌")
         elif current_saves >= 1:
             if ogsave not in user.roles:
                 await user.add_roles(ogsave)
@@ -1797,7 +1745,7 @@ class Monitor(commands.Cog):
                 msg += f"now count in <#{og_channel}>"
                 await message.channel.send(msg)
             else:
-                await msg.add_reaction("✅")
+                await og_msg.add_reaction("✅")
         else:
             if ogsave in user.roles:
                 await user.remove_roles(ogsave)
@@ -1805,7 +1753,7 @@ class Monitor(commands.Cog):
                 msg += f"to count in <#{og_channel}>"
                 await message.channel.send(msg)
             else:
-                await msg.add_reaction("❌")
+                await og_msg.add_reaction("❌")
         rem = counter_post.get("reminder", False)
         dm = counter_post.get("dm", False)
         if rem:
@@ -1881,6 +1829,59 @@ class Monitor(commands.Cog):
                         }
                     )
 
+    async def beta_update(self, message:Message, beta_message:Message, 
+            user_id:int):
+        """Update beta stats."""
+        embed_content = beta_message.embeds[0].to_dict()
+        guild = message.guild
+        if (re.findall("stats", embed_content["title"]) and
+                embed_content["fields"][3]["name"] == "Saves"):
+            user = guild.get_member(user_id)
+            if user:
+                field_content = embed_content["fields"][3]["value"]
+                current_saves = float(field_content.split("/")[0][1:])
+                if current_saves == int(current_saves):
+                    current_saves = int(current_saves)
+                total_saves = int(field_content.split("/")[1][:-1])
+                field_content = embed_content["fields"][0]["value"]
+                correct = int(re.split(" ", field_content)[0][1:])
+                wrong = int(embed_content["fields"][1]["value"][1:-1])
+                beta_collection.update_one(
+                    {
+                        "_id":user.id
+                    }, {
+                        "$set":
+                        {
+                            "name":f"{user}",
+                            "correct":correct,
+                            "wrong":wrong,
+                            "current_saves":current_saves,
+                            "total_saves":total_saves
+                        }
+                    }, True
+                )
+                beta_save:Role = guild.get_role(beta_save_id)
+                dishonorable:Role = guild.get_role(dishonorable_id)
+                if dishonorable in user.roles:
+                    await user.remove_roles(beta_save)
+                    await beta_message.add_reaction("❌")
+                elif current_saves >= 1:
+                    if beta_save in user.roles:
+                        await beta_message.add_reaction("✅")
+                    else:
+                        await user.add_roles(beta_save)
+                        msg = f"<@{user.id}> can now "
+                        msg += f"count in <#{beta_channel}>"
+                        await message.channel.send(msg)
+                else:
+                    if beta_save in user.roles:
+                        await user.remove_roles(beta_save)
+                        msg = f"<@{user.id} doesn't have enough saves "
+                        msg += f"and cannot count in <#{beta_channel}"
+                        await message.channel.send(msg)
+                    else:
+                        await beta_message.add_reaction("❌")
+
     def yoda_update(self, yoda_message:Message, author:Member):
         """Input yoda details after reading the embed."""
         embed_content = yoda_message.embeds[0].to_dict()
@@ -1888,34 +1889,18 @@ class Monitor(commands.Cog):
         correct = int(descr.split("**")[3])
         wrong = int(descr.split("**")[5])
         tokens = float(descr.split("**")[9].split("/")[0])
-        if yoda_collection.find_one(
+        yoda_collection.update_one(
             {
                 "_id": author.id
-            }
-        ):
-            yoda_collection.update_one(
-                {
-                    "_id": author.id
-                }, {
-                    "$set": {
-                        "correct": correct,
-                        "wrong": wrong,
-                        "tokens": tokens,
-                    }
-                }
-            )
-        else:
-            yoda_collection.insert_one(
-                {
-                    "_id": author.id,
-                    "name": f"{author}",
+            }, {
+                "$set": {
                     "correct": correct,
                     "wrong": wrong,
                     "tokens": tokens,
-                    "streak": 0,
-                    "high": 0,
                 }
-            )
+            }, True
+        )
 
 def setup(bot):
+    """The setup command for the cog."""
     bot.add_cog(Monitor(bot))
