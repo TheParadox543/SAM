@@ -1519,7 +1519,7 @@ class Monitor(commands.Cog):
                 msg:Message = await self.bot.wait_for("message", 
                     check=check, timeout=5)
             except asyncio.TimeoutError:
-                await message.channel.send("Failed")
+                await message.channel.send("Failed to read vote embed.")
             else:
                 await self.vote_update(message, msg)
         if re.match("c!transfersave",content,re.I):
@@ -1550,6 +1550,16 @@ class Monitor(commands.Cog):
                     misc.update_one({"_id":"abc?gift"}, {"$set":{"user":userID}})
                 else:
                     misc.insert_one({"_id":"abc?gift","user":userID})
+        if content.startswith("y!userstats"):
+            def check(m:Message):
+                return m.author.id==yoda_bot and m.embeds
+            try:
+                yoda_message:Message = await self.bot.wait_for("message", 
+                    check=check, timeout=5)
+            except asyncio.TimeoutError:
+                await message.channel.send("Failed to read yoda embed.")
+            else:
+                self.yoda_update(yoda_message, author)
         # if re.match("abc!shop",content,re.I):
         #     if misc.find_one({"_id":"abc!shop"}):
         #         misc.update_one({"_id":"abc!shop"}, {"$set":{"user":author.id}})
@@ -1577,7 +1587,7 @@ class Monitor(commands.Cog):
             if slash_data["name"] == "work shift":
                 embed_content = after.embeds[0].to_dict()
                 if "footer" in embed_content:
-                    user_id:int = slash_data["user"]["id"]
+                    user_id = int(slash_data["user"]["id"])
                     if time_collection.find_one({
                         "user": user_id,
                         "command": "work shift"
@@ -1870,6 +1880,42 @@ class Monitor(commands.Cog):
                             "channel": channel_id,
                         }
                     )
+
+    def yoda_update(self, yoda_message:Message, author:Member):
+        """Input yoda details after reading the embed."""
+        embed_content = yoda_message.embeds[0].to_dict()
+        descr = embed_content["description"]
+        correct = int(descr.split("**")[3])
+        wrong = int(descr.split("**")[5])
+        tokens = float(descr.split("**")[9].split("/")[0])
+        if yoda_collection.find_one(
+            {
+                "_id": author.id
+            }
+        ):
+            yoda_collection.update_one(
+                {
+                    "_id": author.id
+                }, {
+                    "$set": {
+                        "correct": correct,
+                        "wrong": wrong,
+                        "tokens": tokens,
+                    }
+                }
+            )
+        else:
+            yoda_collection.insert_one(
+                {
+                    "_id": author.id,
+                    "name": f"{author}",
+                    "correct": correct,
+                    "wrong": wrong,
+                    "tokens": tokens,
+                    "streak": 0,
+                    "high": 0,
+                }
+            )
 
 def setup(bot):
     bot.add_cog(Monitor(bot))

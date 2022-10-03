@@ -128,8 +128,29 @@ class Stats(commands.Cog):
             msg += f"\n\nCurrent Streak: {user_post.get('streak',0)}"
             msg += f"\nHighest Streak: {user_post.get('high',0)}"
             embedVar.add_field(name=mode_list["5"],value=msg)
+        user_post = yoda_collection.find_one({"_id": user.id})
+        if user_post:
+            correct = user_post.get("correct", 0)
+            wrong = user_post.get("wrong", 0)
+            total = correct + wrong
+            if total == 0:
+                rate = 0
+            else:
+                rate = round(float(correct/total)*100, 2)
+            tokens = user_post.get("tokens", 0)
+            if tokens == int(tokens):
+                tokens = int(tokens)
+            else:
+                tokens = round(tokens, 3)
+            msg = f"Rate: {rate}%"
+            msg += f"\nCorrect: {correct}"
+            msg += f"\nWrong: {wrong}"
+            msg += f"\nTokens: {tokens}/2"
+            # msg += f"\n\nCurrent Streak: {user_post.get('streak',0)}"
+            # msg += f"\nHighest Streak: {user_post.get('high',0)}"
+            embedVar.add_field(name=mode_list["6"], value=msg)
         await ctx.send(embed=embedVar)
-    
+
     @commands.command(name="currentscore", aliases=["cs"])
     async def currentscore_command(self, ctx:Context,
             mode:Literal["og", "classic", "numselli"]="og",
@@ -628,6 +649,29 @@ class Stats(commands.Cog):
                 new_cor = correct + x
                 new_rate = str(round((rate + 0.0001)*100,2))[:5]
                 msg += f"`numselli`: Rank up to {new_rate}% at **{new_cor}**. "
+                msg += f"You need ~**{x}** more numbers.\n"
+        user_post = yoda_collection.find_one(
+            {
+                "_id":user.id
+            }, {
+                "correct":1,
+                "wrong":1
+            }
+        )
+        if user_post:
+            correct = user_post['correct']
+            wrong = user_post.get('wrong',0)
+            total = correct + wrong
+            rate = round(float(correct/total),4)
+            if rate >= 0.9998:
+                msg += "`yoda`: The bot can't calculate the number of counts "
+                msg += "you need to rank up\n"
+            else:
+                new_rate = rate + 0.00005
+                x = math.ceil((new_rate * total - correct)/(1 - new_rate))
+                new_cor = correct + x
+                new_rate = str(round((rate + 0.0001)*100,2))[:5]
+                msg += f"`yoda`: Rank up to {new_rate}% at **{new_cor}**. "
                 msg += f"You need ~**{x}** more numbers.\n"
         title_msg = f"Rank up stats for {user}"
         embedVar = Embed(title=title_msg,description=msg,color=color_lamuse)
