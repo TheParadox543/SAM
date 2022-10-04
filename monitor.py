@@ -79,7 +79,7 @@ class Monitor(commands.Cog):
                         "alt":1
                     }
                 )
-                if user_post:
+                if user_post is not None:
                     if "alt" in user_post:
                         user_main = user_post.get("alt")
                         user = guild.get_member(user_main)
@@ -91,53 +91,51 @@ class Monitor(commands.Cog):
                                 "high":1
                             }
                         )
-                        if user_post2['streak'] == user_post2['high']:
+                        streak = user_post2.get("streak", 0)
+                        if streak == user_post2.get("high", 0):
                             og_collection.update_one(
                                 {
                                     "_id":user_main
                                 }, {
-                                    "$inc":
-                                    {
+                                    "$inc": {
                                         "streak":1,
                                         "high":1,
                                         "daily":1
                                     }
                                 }
                             )
-                            if (user_post2['streak']+1)%500==0:
-                                msg_s = f"n{(user_post2['streak']+1)}"
+                            if (streak + 1)%500 == 0:
+                                msg_s = f"n{(streak+1)}"
                         else:
                             og_collection.update_one(
                                 {
                                     "_id":user_main
                                 }, {
-                                    "$inc":
-                                    {
+                                    "$inc": {
                                         "streak":1,
                                         "daily":1
                                     }
                                 }
                             )
-                            if (user_post2['streak']+1)%500==0:
-                                msg_s = f"{(user_post2['streak']+1)}"
+                            if (streak + 1)%500 == 0:
+                                msg_s = f"{(streak+1)}"
                         og_collection.update_one(
                             {
                                 "_id":user_id
                             }, {
-                                "$inc":
-                                {
+                                "$inc": {
                                     "correct":1
                                 }
                             }
                         )
                     else:
-                        if user_post['streak'] == user_post['high']:
+                        streak = user_post.get("streak", 0)
+                        if streak == user_post.get("high", 0):
                             og_collection.update_one(
                                 {
                                     "_id":user_id
                                 }, {
-                                    "$inc":
-                                    {
+                                    "$inc": {
                                         "streak":1,
                                         "high":1,
                                         "correct":1,
@@ -145,8 +143,8 @@ class Monitor(commands.Cog):
                                     }
                                 }
                             )
-                            if (user_post['streak']+1)%500==0:
-                                msg_s = f"n{(user_post['streak']+1)}"
+                            if (streak + 1)%500 == 0:
+                                msg_s = f"n{(streak+1)}"
                         else:
                             og_collection.update_one(
                                 {
@@ -160,18 +158,19 @@ class Monitor(commands.Cog):
                                     }
                                 }
                             )
-                            if (user_post['streak']+1)%500==0:
-                                msg_s = f"{(user_post['streak']+1)}"
+                            if (streak + 1)%500 == 0:
+                                msg_s = f"{(streak+1)}"
                     mode = "1"
                 time_now = message.created_at
                 time_diff = time_now - self.og_last_count
-                self.og_last_count = time_now
                 if abs(time_diff) >= timedelta(minutes=10) \
                         or self.og_start_count == EPOCH:
                     if self.og_count >= 50:
                         scores_chnl:TextChannel = guild.get_channel(sam_channel)
                         msg = f"Last run in <#{og_channel}> had "
                         msg += f"**{self.og_count}** numbers."
+                        msg += f"\nRun started from {self.og_start_count} "
+                        msg += f"to {self.og_last_count}."
                         try:
                             await scores_chnl.send(msg)
                         except nextcord.errors.Forbidden:
@@ -185,6 +184,7 @@ class Monitor(commands.Cog):
                         logger_monitor.error("Couldn't save run start.")
                 else:
                     self.og_count += 1
+                self.og_last_count = time_now
             elif channel == classic_channel and re.match("\d", number_str):
                 try:
                     number = int(number_str)
@@ -201,7 +201,7 @@ class Monitor(commands.Cog):
                         "alt":1
                     }
                 )
-                if user_post:
+                if user_post is not None:
                     if "alt" in user_post:
                         user_main = user_post.get("alt")
                         user = guild.get_member(user_main)
@@ -213,73 +213,70 @@ class Monitor(commands.Cog):
                                 "high":1
                             }
                         )
-                        if user_post2['streak'] == user_post2['high']:
+                        streak = user_post2.get("streak", 0)
+                        if streak == user_post2.get("high", 0):
                             classic_collection.update_one(
                                 {
                                     "_id":user_main
                                 }, {
-                                    "$inc":
-                                    {
+                                    "$inc": {
                                         "streak":1,
                                         "high":1,
                                     }
                                 }
                             )
-                            if (user_post2['streak']+1)%500==0:
-                                msg_s = f"n{(user_post2['streak']+1)}"
+                            if (streak+1)%500==0:
+                                msg_s = f"n{(streak+1)}"
                         else:
                             classic_collection.update_one(
                                 {
                                     "_id":user_main
                                 }, {
-                                    "$inc":
-                                    {
+                                    "$inc": {
                                         "streak":1
                                     }
                                 }
                             )
-                            if (user_post2['streak']+1)%500==0:
-                                msg_s = f"{(user_post2['streak']+1)}"
+                            if (streak+1)%500==0:
+                                msg_s = f"{(streak+1)}"
                         classic_collection.update_one(
                             {
                                 "_id":user_id
                             }, {
-                                "$inc":
-                                {
+                                "$inc": {
                                     "correct":1
                                 }
                             }
                         )
                     else:
-                        if user_post['streak'] == user_post['high']:
+                        streak = user_post.get("streak", 0)
+                        if streak == user_post.get("high", 0):
                             classic_collection.update_one(
                                 {
                                     "_id":user_id
                                 }, {
-                                    "$inc":
-                                    {
+                                    "$inc": {
                                         "streak":1,
                                         "high":1,
                                         "correct":1
                                     }
                                 }
                             )
-                            if (user_post['streak']+1)%500==0:
-                                msg_s = f"n{(user_post['streak']+1)}"
+                            if (streak+1)%500==0:
+                                msg_s = f"n{(streak+1)}"
                         else:
                             classic_collection.update_one(
                                 {
                                     "_id":user_id
                                 }, {
-                                    "$inc":
-                                    {
+                                    "$inc": {
                                         "streak":1,
                                         "correct":1
                                     }
                                 }
                             )
-                            if (user_post['streak']+1)%500==0:
-                                msg_s = f"{(user_post['streak']+1)}"
+                            if (streak+1)%500==0:
+                                msg_s = f"{(streak+1)}"
                     mode = "2"
                 else:
                     classic_collection.insert_one(
@@ -302,9 +299,8 @@ class Monitor(commands.Cog):
                         {
                             "_id":user_id
                         }, {
-                        "$inc":
-                            {
-                            "correct":1
+                            "$inc": {
+                                "correct":1
                             }
                         }
                     )
@@ -389,7 +385,7 @@ class Monitor(commands.Cog):
                         "alt":1
                     }
                 )
-                if user_post:
+                if user_post is not None:
                     if "alt" in user_post:
                         user_main = user_post.get("alt")
                         user = guild.get_member(user_main)
@@ -401,73 +397,70 @@ class Monitor(commands.Cog):
                                 "high":1
                             }
                         )
-                        if user_post2['streak'] == user_post2['high']:
+                        streak = user_post2.get("streak", 0)
+                        if streak == user_post2.get("high", 0):
                             numselli_collection.update_one(
                                 {
                                     "_id":user_main
                                 }, {
-                                    "$inc":
-                                    {
+                                    "$inc": {
                                         "streak":1,
                                         "high":1,
                                     }
                                 }
                             )
-                            if (user_post2['streak']+1)%500==0:
-                                msg_s = f"n{(user_post2['streak']+1)}"
+                            if (streak+1)%500==0:
+                                msg_s = f"n{(streak+1)}"
                         else:
                             numselli_collection.update_one(
                                 {
                                     "_id":user_main
                                 }, {
-                                    "$inc":
-                                    {
+                                    "$inc": {
                                         "streak":1
                                     }
                                 }
                             )
-                            if (user_post2['streak']+1)%500==0:
-                                msg_s = f"{(user_post2['streak']+1)}"
+                            if (streak+1)%500==0:
+                                msg_s = f"{(streak+1)}"
                         numselli_collection.update_one(
                             {
                                 "_id":user_id
                             }, {
-                                "$inc":
-                                {
+                                "$inc": {
                                     "correct":1
                                 }
                             }
                         )
                     else:
-                        if user_post['streak'] == user_post['high']:
+                        streak = user_post.get("streak", 0)
+                        if streak == user_post.get("high", 0):
                             numselli_collection.update_one(
                                 {
                                     "_id":user_id
                                 }, {
-                                    "$inc":
-                                    {
+                                    "$inc": {
                                         "streak":1,
                                         "high":1,
                                         "correct":1
                                     }
                                 }
                             )
-                            if (user_post['streak']+1)%500==0:
-                                msg_s = f"n{(user_post['streak']+1)}"
+                            if (streak+1)%500==0:
+                                msg_s = f"n{(streak+1)}"
                         else:
                             numselli_collection.update_one(
                                 {
                                     "_id":user_id
                                 }, {
-                                    "$inc":
-                                    {
+                                    "$inc": {
                                         "streak":1,
                                         "correct":1
                                     }
                                 }
                             )
-                            if (user_post['streak']+1)%500==0:
-                                msg_s = f"{(user_post['streak']+1)}"
+                            if (streak+1)%500==0:
+                                msg_s = f"{(streak+1)}"
                     mode = "5"
             elif channel == yoda_channel and re.match("\d", number_str):
                 try:
@@ -480,12 +473,14 @@ class Monitor(commands.Cog):
                     {
                         "_id":user_id
                     }, {
-                        "streak":1,
-                        "high":1,
-                        "alt":1
+                        "streak": 1,
+                        "high": 1,
+                        "alt": 1,
+                        "tokens": 1,
                     }
                 )
-                if user_post:
+                if user_post is not None:
+                    tokens:float = min(user_post.get("tokens", 0)+0.001, 2)
                     if "alt" in user_post:
                         user_main = user_post.get("alt")
                         user = guild.get_member(user_main)
@@ -497,27 +492,26 @@ class Monitor(commands.Cog):
                                 "high":1
                             }
                         )
-                        if user_post2['streak'] == user_post2['high']:
+                        streak = user_post2.get("streak", 0)
+                        if streak == user_post2.get("high", 0):
                             yoda_collection.update_one(
                                 {
                                     "_id":user_main
                                 }, {
-                                    "$inc":
-                                    {
+                                    "$inc": {
                                         "streak":1,
                                         "high":1,
                                     }
                                 }
                             )
-                            if (user_post2['streak']+1)%500==0:
-                                msg_s = f"n{(user_post2['streak']+1)}"
+                            if (streak+1)%500==0:
+                                msg_s = f"n{(streak+1)}"
                         else:
                             yoda_collection.update_one(
                                 {
                                     "_id":user_main
                                 }, {
-                                    "$inc":
-                                    {
+                                    "$inc": {
                                         "streak":1
                                     }
                                 }
@@ -528,42 +522,49 @@ class Monitor(commands.Cog):
                             {
                                 "_id":user_id
                             }, {
-                                "$inc":
-                                {
+                                "$inc": {
                                     "correct":1
+                                }, 
+                                "$set": {
+                                    "tokens": tokens,
                                 }
                             }
                         )
                     else:
-                        if user_post['streak'] == user_post['high']:
+                        streak = user_post.get("streak", 0)
+                        if streak == user_post.get('high', 0):
                             yoda_collection.update_one(
                                 {
                                     "_id":user_id
                                 }, {
-                                    "$inc":
-                                    {
+                                    "$inc": {
                                         "streak":1,
                                         "high":1,
                                         "correct":1
+                                    }, 
+                                    "$set": {
+                                        "tokens": tokens,
                                     }
                                 }
                             )
-                            if (user_post['streak']+1)%500==0:
-                                msg_s = f"n{(user_post['streak']+1)}"
+                            if (streak+1)%500==0:
+                                msg_s = f"n{(streak+1)}"
                         else:
                             yoda_collection.update_one(
                                 {
                                     "_id":user_id
                                 }, {
-                                    "$inc":
-                                    {
+                                    "$inc": {
                                         "streak":1,
                                         "correct":1
+                                    }, 
+                                    "$set": {
+                                        "tokens": tokens,
                                     }
                                 }
                             )
-                            if (user_post['streak']+1)%500==0:
-                                msg_s = f"{(user_post['streak']+1)}"
+                            if (streak+1)%500==0:
+                                msg_s = f"{(streak+1)}"
                     mode = "6"
                 else:
                     yoda_collection.insert_one(
@@ -573,7 +574,8 @@ class Monitor(commands.Cog):
                             "correct":1,
                             "wrong":0,
                             "streak":1,
-                            "high":1
+                            "high":1, 
+                            "tokens": 0.001
                         }
                     )
                 misc.update_one(
