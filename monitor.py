@@ -673,6 +673,7 @@ class Monitor(commands.Cog):
                 user = message.mentions[0]
                 user_id = message.mentions[0].id
                 if channel == og_channel and author.id == og_bot:
+                    saves = float(re.findall("\d+\.*\d*", content)[2])
                     user_post = og_collection.find_one(
                         {
                             "_id":user_id
@@ -733,7 +734,9 @@ class Monitor(commands.Cog):
                                 {
                                     "correct":-1,
                                     "wrong":1,
-                                    "current_saves":-1
+                                }, 
+                                "$set": {
+                                    "current_saves": saves,
                                 }
                             }
                         )
@@ -749,12 +752,12 @@ class Monitor(commands.Cog):
                                         "high":-1,
                                         "wrong":1,
                                         "correct":-1,
-                                        "current_saves":-1,
                                         "daily":-1
                                     },
                                     "$set":
                                     {
-                                        "streak":0
+                                        "current_saves": saves,
+                                        "streak":0,
                                     }
                                 }
                             )
@@ -767,12 +770,12 @@ class Monitor(commands.Cog):
                                     {
                                         "wrong":1,
                                         "correct":-1,
-                                        "current_saves":-1,
                                         "daily":-1
                                     },
                                     "$set":
                                     {
-                                        "streak":0
+                                        "current_saves":-1,
+                                        "streak":0,
                                     }
                                 }
                             )
