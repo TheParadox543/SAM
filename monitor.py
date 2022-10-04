@@ -1017,6 +1017,20 @@ class Monitor(commands.Cog):
                 color=color_lamuse
             )
             await scores.send(embed=embedVar)
+            countaholics = guild.get_role(countaholic_id)
+            overwrites = message.channel.overwrites_for(countaholics)
+            overwrites.update(send_messages=False)
+            await message.channel.set_permissions(countaholics, overwrite=overwrites)
+            await message.channel.send(f"<#{yoda_channel}> is locked till it is restored.")
+
+        ## Unlock on paying yoda.
+        if (author.id == yoda_bot and content.startswith("Paid you have")):
+            countaholics = guild.get_role(countaholic_id)
+            yoda_channel_now = guild.get_channel(yoda_channel)
+            overwrites = yoda_channel_now.overwrites_for(countaholics)
+            overwrites.update(send_messages=True)
+            await yoda_channel_now.set_permissions(countaholics, overwrite=overwrites)
+            await yoda_channel_now.send(f"<#{yoda_channel}> is unlocked since count is restored.")
 
         """All functions related to og bot"""
         if author.id == og_bot:
