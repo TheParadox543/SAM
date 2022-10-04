@@ -1109,12 +1109,12 @@ class Monitor(commands.Cog):
                 user = misc.find_one({"_id":"abc?d"})
                 time_now = datetime.utcnow().replace(microsecond=0)
                 try:
-                    hour, min = int(time[0]), int(time[1])
+                    hour, mins = int(time[0]), int(time[1])
                 except:
                     return
-                if hour == 0 and min == 0:
-                    min = 1
-                time_new = time_now + timedelta(hours=hour,minutes=min)
+                if hour == 0 and mins == 0:
+                    mins = 1
+                time_new = time_now + timedelta(hours=hour,minutes=mins)
                 if time_collection.find_one({"user":user['user'],"command":"use abc?d"}):
                     time_collection.update_one(
                         {
