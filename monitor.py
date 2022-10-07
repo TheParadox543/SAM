@@ -166,11 +166,12 @@ class Monitor(commands.Cog):
                 if abs(time_diff) >= timedelta(minutes=10) \
                         or self.og_start_count == EPOCH:
                     if self.og_count >= 50:
+                        start = utils.format_dt(self.og_start_count, "T")
+                        stop = utils.format_dt(self.og_last_count)
                         scores_chnl:TextChannel = guild.get_channel(sam_channel)
                         msg = f"Last run in <#{og_channel}> had "
                         msg += f"**{self.og_count}** numbers."
-                        msg += f"\nRun started from {self.og_start_count} "
-                        msg += f"to {self.og_last_count}."
+                        msg += f"\nRun started from {start} to {stop}."
                         try:
                             await scores_chnl.send(msg)
                         except nextcord.errors.Forbidden:
@@ -1078,26 +1079,21 @@ class Monitor(commands.Cog):
         if author.id == classic_bot:
             if message.embeds:
                 embed_content = message.embeds[0].to_dict()
-                if "author" in embed_content and "fields" in embed_content:
+                if ("author" in embed_content and "fields" in embed_content):
                     name = embed_content["author"]["name"]
                     user = guild.get_member_named(name)
                     desc = embed_content["fields"][0]["value"]
                     if user:
-                        correct = desc.split("**")[3]
-                        wrong = desc.split("**")[5]
-                        cor = wro = 0
-                        for i in correct.split(","):
-                            cor = cor * 1000 + int(i)
-                        for i in wrong.split(","):
-                            wro = wro * 1000 + int(i)
+                        correct = int(desc.split("**")[3].replace(",", ""))
+                        wrong = int(desc.split("**")[5].replace(",", ""))
                         classic_collection.update_one(
                             {"_id":user.id},
                             {
                                 "$set":
                                 {
                                     "name":f"{user}",
-                                    "correct":cor,
-                                    "wrong":wro
+                                    "correct":correct,
+                                    "wrong":wrong,
                                 }
                             }, True
                         )
@@ -1193,53 +1189,11 @@ class Monitor(commands.Cog):
         """For reading numselli embeds"""
         if author.id == numselli_bot:
             if message.embeds:
+                if (message.interaction and
+                        message.interaction.name=="user"):
+                    await self.numselli_user_update(message)
+                    return
                 embed_content = message.embeds[0].to_dict()
-                if 'fields' in embed_content:
-                    field1 = embed_content['fields'][0]
-                    if re.match('Global Stats',field1['name']):
-                        name = embed_content['title'].split(" ",2)[2]
-                        nums = re.findall('[\d\.,]+',field1['value'])
-                        correct = int(re.sub(',','',nums[1]))
-                        wrong = int(re.sub(',','',nums[2]))
-                        current_saves = float(nums[4])
-                        total_saves = int(nums[5])
-                        user = guild.get_member_named(name)
-                        if user:
-                            numselli_collection.update_one(
-                                {
-                                    "_id":user.id
-                                }, {
-                                    "$set":
-                                    {
-                                        "name":f"{user}",
-                                        "correct":correct,
-                                        "wrong":wrong,
-                                        "current_saves":current_saves,
-                                        "total_saves":total_saves
-                                    }
-                                }, True
-                            )
-                            have_save:Role = guild.get_role(have_save_id)
-                            dishonorable:Role = guild.get_role(dishonorable_id)
-                            if dishonorable in user.roles:
-                                await user.remove_roles(have_save)
-                                await message.add_reaction("❌")
-                            elif current_saves >= 1:
-                                if have_save in user.roles:
-                                    await message.add_reaction("✅")
-                                else:
-                                    await user.add_roles(have_save)
-                                    msg = f"<@{user.id}> can now "
-                                    msg += f"count with <@{numselli_bot}>"
-                                    await message.channel.send(msg)
-                            else:
-                                if have_save in user.roles:
-                                    await user.remove_roles(have_save)
-                                    msg = f"<@{user.id}> doesn't have enough saves "
-                                    msg += f"and cannot count with <@{numselli_bot}>"
-                                    await message.channel.send(msg)
-                                else:
-                                    await message.add_reaction("❌")
                 if re.match('Sent',embed_content['title']):
                     nums = re.findall('[\d\.,]+',embed_content['description'])
                     sent_saves = float(nums[0])
@@ -1648,7 +1602,7 @@ class Monitor(commands.Cog):
 
         else:
             # Calculate the time when run started in int.
-            time_str = nextcord.utils.format_dt(self.og_start_count, "T")
+            time_str = utils.format_dt(self.og_start_count, "T")
             msg = f"Run started at {time_str}.\n"
 
             # Run time in words.
@@ -1683,24 +1637,19 @@ class Monitor(commands.Cog):
         user = guild.get_member_named(embed_content["title"])
         if user:
             desc = embed_content["fields"][0]["value"]
-            correct = desc.split("**")[3]
-            wrong = desc.split("**")[5]
+            correct = desc.split("**")[3].replace(",", "")
+            wrong = desc.split("**")[5].replace(",", "")
             saves = desc.split("**")[9]
             current_saves = float(saves.split("/")[0])
             total_saves = int(saves.split("/")[1])
-            cor = wro = 0
-            for i in correct.split(","):
-                cor = cor * 1000 + int(i)
-            for i in wrong.split(","):
-                wro = wro * 1000 + int(i)
             og_collection.update_one(
                 {
                     "_id":user.id
                 }, {
                     "$set": {
                         "name":f"{user}",
-                        "correct":cor,
-                        "wrong":wro,
+                        "correct":int(correct),
+                        "wrong":int(wrong),
                         "current_saves":current_saves,
                         "total_saves":total_saves
                     }
@@ -1847,6 +1796,57 @@ class Monitor(commands.Cog):
                             "channel": channel_id,
                         }
                     )
+
+    async def numselli_user_update(self, message:Message):
+        """Update numselli data from user embed."""
+        embed_content = message.embeds[0].to_dict()
+        guild = message.guild
+        if ("fields" in embed_content and 
+                embed_content["fields"][0]["name"]=="Global Stats"):
+            field1 = embed_content["fields"][0]
+            name = embed_content["title"].split(" ", 2)[2]
+            list = field1["value"].split("**")
+            correct = int(list[3].replace(",",""))
+            wrong = int(list[5].replace(",",""))
+            saves = list[9]
+            current_saves = float(saves.split("/")[0])
+            total_saves = int(saves.split("/")[1])
+            user = guild.get_member_named(name)
+            if user:
+                numselli_collection.update_one(
+                    {
+                        "_id":user.id
+                    }, {
+                        "$set": {
+                            "name":f"{user}",
+                            "correct":correct,
+                            "wrong":wrong,
+                            "current_saves":current_saves,
+                            "total_saves":total_saves
+                        }
+                    }, True
+                )
+                have_save:Role = guild.get_role(have_save_id)
+                dishonorable:Role = guild.get_role(dishonorable_id)
+                if dishonorable in user.roles:
+                    await user.remove_roles(have_save)
+                    await message.add_reaction("❌")
+                elif current_saves >= 1:
+                    if have_save in user.roles:
+                        await message.add_reaction("✅")
+                    else:
+                        await user.add_roles(have_save)
+                        msg = f"<@{user.id}> can now "
+                        msg += f"count with <@{numselli_bot}>"
+                        await message.channel.send(msg)
+                else:
+                    if have_save in user.roles:
+                        await user.remove_roles(have_save)
+                        msg = f"<@{user.id}> doesn't have enough saves "
+                        msg += f"and cannot count with <@{numselli_bot}>"
+                        await message.channel.send(msg)
+                    else:
+                        await message.add_reaction("❌")
 
     async def beta_update(self, message:Message, beta_message:Message, 
             user_id:int):
