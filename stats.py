@@ -53,6 +53,7 @@ class Stats(commands.Cog):
             msg += f"\n\nCurrent Streak: {streak}"
             msg += f"\nHighest Streak: {high}"
             msg += f"\nDaily: {daily}" 
+            msg += "\n`c!user`"
             embedVar.add_field(name=mode_list["1"], value=msg)
         user_post = classic_collection.find_one({"_id":user.id})
         if user_post:
@@ -71,12 +72,15 @@ class Stats(commands.Cog):
             msg += f"\nWrong: {wrong}"
             msg += f"\n\n\nCurrent Streak: {streak}"
             msg += f"\nHighest Streak: {high}"
+            msg += "\n\n</stats user:1002372595754217554>"
             embedVar.add_field(name=mode_list["2"], value=msg)
         user_post = beta_collection.find_one({"_id":user.id})
         if user_post:
             correct = user_post.get("correct", 0)
             wrong = user_post.get('wrong', 0)
             total = correct + wrong
+            streak = user_post.get("streak", 0)
+            high = user_post.get("high", 0)
             if total == 0:
                 rate = 0
             else:
@@ -91,6 +95,9 @@ class Stats(commands.Cog):
             msg += f"\nCorrect: {correct}"
             msg += f"\nWrong: {wrong}"
             msg += f"\nSaves: {current_saves}/{total_saves}"
+            msg += f"\n\nCurrent Streak: {streak}"
+            msg += f"\nHighest Streak: {high}"
+            msg += f"\n\n`abc?u`"
             embedVar.add_field(name=mode_list["4"], value=msg)
         user_post = numselli_collection.find_one({"_id":user.id})
         if user_post:
@@ -112,6 +119,7 @@ class Stats(commands.Cog):
             msg += f"\nSaves: {current_saves}/{user_post.get('total_saves', 2)}"
             msg += f"\n\nCurrent Streak: {user_post.get('streak', 0)}"
             msg += f"\nHighest Streak: {user_post.get('high', 0)}"
+            msg += "\n\n</user:918251622059098182>"
             embedVar.add_field(name=mode_list["5"], value=msg)
         user_post = yoda_collection.find_one({"_id": user.id})
         if user_post:
@@ -133,6 +141,7 @@ class Stats(commands.Cog):
             msg += f"\nTokens: {tokens}/2"
             msg += f"\n\nCurrent Streak: {user_post.get('streak', 0)}"
             msg += f"\nHighest Streak: {user_post.get('high', 0)}"
+            msg += "\n\n`y!userstats`"
             embedVar.add_field(name=mode_list["6"], value=msg)
         await ctx.send(embed=embedVar)
 
