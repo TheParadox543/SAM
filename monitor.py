@@ -167,7 +167,7 @@ class Monitor(commands.Cog):
                         or self.og_start_count == EPOCH:
                     if self.og_count >= 50:
                         start = utils.format_dt(self.og_start_count, "T")
-                        stop = utils.format_dt(self.og_last_count)
+                        stop = utils.format_dt(self.og_last_count, "T")
                         scores_chnl:TextChannel = guild.get_channel(sam_channel)
                         msg = f"Last run in <#{og_channel}> had "
                         msg += f"**{self.og_count}** numbers."
@@ -290,21 +290,89 @@ class Monitor(commands.Cog):
                             "high":1
                         }
                     )
-            elif channel == beta_channel and re.match("[a-zA-Z]",number_str):
+            elif channel == beta_channel and re.match("[a-zA-Z]", number_str):
                 try:
                     number = self.letter_calc(number_str)
                 except:
                     return
-                if beta_collection.find_one({"_id":user_id}):
-                    beta_collection.update_one(
-                        {
-                            "_id":user_id
-                        }, {
-                            "$inc": {
-                                "correct":1
+                user_post =  beta_collection.find_one({"_id":user_id})
+                if user_post is not None:
+                    if "alt" in user_post:
+                        user_main = user_post.get("alt")
+                        user = guild.get_member(user_main)
+                        user_post2:dict = beta_collection.find_one(
+                            {
+                                "_id":user_main
+                            }, {
+                                "streak":1,
+                                "high":1
                             }
-                        }
-                    )
+                        )
+                        streak = user_post2.get("streak", 0)
+                        if streak == user_post2.get("high", 0):
+                            beta_collection.update_one(
+                                {
+                                    "_id":user_main
+                                }, {
+                                    "$inc": {
+                                        "streak":1,
+                                        "high":1,
+                                    }
+                                }
+                            )
+                            if (streak+1)%500==0:
+                                msg_s = f"n{(streak+1)}"
+                        else:
+                            beta_collection.update_one(
+                                {
+                                    "_id":user_main
+                                }, {
+                                    "$inc": {
+                                        "streak":1
+                                    }
+                                }
+                            )
+                            if (streak+1)%500==0:
+                                msg_s = f"{(streak+1)}"
+                        beta_collection.update_one(
+                            {
+                                "_id":user_id
+                            }, {
+                                "$inc": {
+                                    "correct":1
+                                }
+                            }
+                        )
+                    else:
+                        streak = user_post.get("streak", 0)
+                        if streak == user_post.get("high", 0):
+                            beta_collection.update_one(
+                                {
+                                    "_id":user_id
+                                }, {
+                                    "$inc": {
+                                        "streak":1,
+                                        "high":1,
+                                        "correct":1
+                                    }
+                                }
+                            )
+                            if (streak+1)%500==0:
+                                msg_s = f"n{(streak+1)}"
+                        else:
+                            beta_collection.update_one(
+                                {
+                                    "_id":user_id
+                                }, {
+                                    "$inc": {
+                                        "streak":1,
+                                        "correct":1
+                                    }
+                                }
+                            )
+                            if (streak+1)%500==0:
+                                msg_s = f"{(streak+1)}"
+                    mode = "4"
             elif channel in numselli_channels.values():
                 if channel == numselli_channels["whole"] and \
                         re.match("\d", number_str):
@@ -876,20 +944,91 @@ class Monitor(commands.Cog):
                             )
                     mode="2"
                 elif channel == beta_channel and author.id == beta_bot:
-                    beta_collection.update_one(
+                    user_post = beta_collection.find_one(
                         {
                             "_id":user_id
-                        },
-                        {
-                            "$inc":
-                            {
-                                "wrong":1,
-                                "correct":-1,
-                                "current_saves":-1
-                            }
+                        }, {
+                            "streak":1,
+                            "high":1,
+                            "alt":1
                         }
                     )
-                    return
+                    if "alt" in user_post:
+                        user_main = user_post["alt"]
+                        user = guild.get_member(user_main)
+                        user_post2 = beta_collection.find_one(
+                            {
+                                "_id":user_main
+                            }, {
+                                "streak":1,
+                                "high":1
+                            }
+                        )
+                        final_streak = user_post2["streak"] - 1
+                        if user_post2['streak'] == user_post2['high']:
+                            beta_collection.update_one(
+                                {
+                                    "_id":user_main
+                                }, {
+                                    "$inc": {
+                                        "high":-1
+                                    },
+                                    "$set": {
+                                        "streak":0
+                                    }
+                                }
+                            )
+                        else:
+                            beta_collection.update_one(
+                                {
+                                    "_id":user_main
+                                }, {
+                                    "$set": {
+                                        "streak":0
+                                    }
+                                }
+                            )
+                        beta_collection.update_one(
+                            {
+                                "_id":user_id
+                            }, {
+                                "$inc": {
+                                    "correct":-1,
+                                    "wrong":1
+                                }
+                            }
+                        )
+                    else:
+                        final_streak = user_post['streak'] - 1
+                        if user_post['streak'] == user_post['high']:
+                            beta_collection.update_one(
+                                {
+                                    "_id":user_id
+                                }, {
+                                    "$inc": {
+                                        "high":-1,
+                                        "wrong":1,
+                                        "correct":-1
+                                    },
+                                    "$set": {
+                                        "streak":0
+                                    }
+                                }
+                            )
+                        else:
+                            beta_collection.update_one(
+                                {"_id":user_id},
+                                {
+                                    "$inc": {
+                                        "wrong":1,
+                                        "correct":-1
+                                    },
+                                    "$set": {
+                                        "streak":1
+                                    }
+                                }
+                            )
+                    mode="4"
                 else:
                     return
                 scores = self.bot.get_channel(sam_channel)
