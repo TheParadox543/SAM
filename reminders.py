@@ -98,7 +98,8 @@ class Reminders(commands.Cog):
         rem_list = time_collection.find({"user":user.id})
         msg = ""
         for item in rem_list:
-            rem_time:datetime = item["time"].replace(tzinfo=timezone.utc)
+            rem_time:datetime = item.get("time", 
+                EPOCH).replace(tzinfo=timezone.utc)
             dm = item.get("dm", False)
             if utils.compute_timedelta(rem_time):
                 time_str = utils.format_dt(rem_time, "R")
