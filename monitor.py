@@ -1328,21 +1328,29 @@ class Monitor(commands.Cog):
         """For reading numselli embeds"""
         if author.id == numselli_bot:
             if message.embeds:
-                if (message.interaction and
-                        message.interaction.name=="user"):
+                if (message.interaction and 
+                        message.interaction.name == "user"):
                     await self.numselli_user_update(message)
-                    return
                 embed_content = message.embeds[0].to_dict()
-                if re.match('Sent',embed_content['title']):
-                    nums = re.findall('[\d\.,]+',embed_content['description'])
+                if re.match("Sent", embed_content["title"]):
+                    nums = re.findall("\d+\.*\d*", embed_content["description"])
                     sent_saves = float(nums[0])
                     rec_id = int(nums[1])
-                    user_post = numselli_collection.find_one({"_id":rec_id})
+                    saves_left = float(nums[3])
+                    have_save:Role = guild.get_role(have_save_id)
+                    dishonorable:Role = guild.get_role(dishonorable_id)
+                    user_post = numselli_collection.find_one({"_id": rec_id})
                     if user_post:
                         user = guild.get_member(rec_id)
-                        actual_saves = user_post['current_saves'] + sent_saves
-                        have_save:Role = guild.get_role(have_save_id)
-                        dishonorable:Role = guild.get_role(dishonorable_id)
+                        actual_saves = user_post.get("current_saves") + sent_saves
+                        numselli_collection.update_one(
+                            {"_id": rec_id}, 
+                            {
+                                "$set": {
+                                    "current_saves": actual_saves
+                                }
+                            }
+                        )
                         if dishonorable in user.roles:
                             await user.remove_roles(have_save)
                             await message.add_reaction("❌")
@@ -1354,123 +1362,151 @@ class Monitor(commands.Cog):
                                 msg = f"<@{user.id}> can now "
                                 msg += f"count with <@{numselli_bot}>"
                                 await message.channel.send(msg)
-                        # else:
-                        #     if have_save in user.roles:
-                        #         await user.remove_roles(have_save)
-                        #         msg = f"<@{user.id}> doesn't have enough saves "
-                        #         msg += f"and cannot count with <@{numselli_bot}>"
-                        #         await message.channel.send(msg)
-                        #     else:
-                        #         await message.add_reaction("❌")
-                if re.match("Save Used", embed_content['title']):
-                    nums = re.findall("[\d.]+", embed_content['description'])
-                    user_id = int(nums[0])
-                    current_saves = float(nums[2])
-                    user = guild.get_member(user_id)
-                    user_post = numselli_collection.find_one(
+                        else:
+                            if have_save in user.roles:
+                                await user.remove_roles(have_save)
+                                msg = f"<@{user.id}> doesn't have enough saves "
+                                msg += f"and cannot count with <@{numselli_bot}>"
+                                await message.channel.send(msg)
+                            else:
+                                await message.add_reaction("❌")
+                    sender:Member = message.interaction.user
+                    numselli_collection.update_one(
+                        {"_id": sender.id}, 
                         {
-                            "_id":user_id
-                        }, {
-                            "streak":1,
-                            "high":1,
-                            "alt":1
-                        }
+                            "$set": {
+                                "current_saves": saves_left,
+                            }
+                        }, True
                     )
-                    if "alt" in user_post:
-                        user_main = user_post["alt"]
-                        user = guild.get_member(user_main)
-                        user_post2 = numselli_collection.find_one(
-                            {
-                                "_id":user_main
-                            }, {
-                                "streak":1,
-                                "high":1
-                            }
-                        )
-                        final_streak = user_post2["streak"] - 1
-                        if user_post2['streak'] == user_post2['high']:
-                            numselli_collection.update_one(
-                                {
-                                    "_id":user_main
-                                }, {
-                                    "$inc":
-                                    {
-                                        "high":-1
-                                    },
-                                    "$set":
-                                    {
-                                        "streak":0
-                                    }
-                                }
-                            )
-                        else:
-                            numselli_collection.update_one(
-                                {
-                                    "_id":user_main
-                                }, {
-                                    "$set":
-                                    {
-                                        "streak":0
-                                    }
-                                }
-                            )
-                        numselli_collection.update_one(
-                            {
-                                "_id":user_id
-                            }, {
-                                "$inc":
-                                {
-                                    "correct":-1,
-                                    "wrong":1
-                                }
-                            }
-                        )
+                    if saves_left >= 1:
+                        await message.add_reaction("💾")
                     else:
-                        final_streak = user_post['streak'] - 1
-                        if user_post['streak'] == user_post['high']:
-                            numselli_collection.update_one(
+                        await message.add_reaction("❌")
+                        msg = f"<@{user.id}> doesn't have enough saves "
+                        msg += f"and cannot count with <@{numselli_bot}>"
+
+                if re.match("Save Used", embed_content["title"]):
+                    if re.match("Channel save", embed_content["description"]):
+                        have_save = guild.get_role(have_save_id)
+                        for user in have_save.members:
+                            user.remove_roles(have_save, 
+                                reason="Channel save got used")
+                        channel_send = guild.get_channel(sam_channel)
+                        msg_send = f"Channel save got used "
+                        msg_send += "in {message.channel.mention}."
+                        await channel_send.send(msg_send)
+                        await message.channel.send("Channel locked for all counters.")
+                    else:
+                        nums = re.findall("\d+\.*\d*", embed_content["description"])
+                        user_id = int(nums[0])
+                        current_saves = float(nums[1])
+                        user = guild.get_member(user_id)
+                        user_post = numselli_collection.find_one(
+                            {
+                                "_id": user_id
+                            }, {
+                                "streak": 1,
+                                "high": 1,
+                                "alt": 1,
+                            }
+                        )
+                        if "alt" in user_post:
+                            user_main = user_post["alt"]
+                            user = guild.get_member(user_main)
+                            user_post2 = numselli_collection.find_one(
                                 {
-                                    "_id":user_id
+                                    "_id": user_main
                                 }, {
-                                    "$inc":
+                                    "streak": 1,
+                                    "high": 1,
+                                }
+                            )
+                            final_streak = user_post2.get("streak") - 1
+                            if user_post2.get("streak") == user_post2.get("high"):
+                                numselli_collection.update_one(
+                                    {"_id": user_main}, 
                                     {
-                                        "high":-1,
-                                        "wrong":1,
-                                        "correct":-1
-                                    },
-                                    "$set":
+                                        "$inc": {
+                                            "high": -1,
+                                        },
+                                        "$set": {
+                                            "streak": 0,
+
+                                        }
+                                    }
+                                )
+                            else:
+                                numselli_collection.update_one(
+                                    {"_id": user_main}, 
                                     {
-                                        "streak":0
+                                        "$set": {
+                                            "streak": 0,
+                                        }
+                                    }
+                                )
+                            numselli_collection.update_one(
+                                {"_id": user_id}, 
+                                {
+                                    "$inc":{
+                                        "correct": -1,
+                                        "wrong": 1,
+                                        "current_saves": current_saves,
                                     }
                                 }
                             )
                         else:
-                            numselli_collection.update_one(
-                                {
-                                    "_id":user_id
-                                }, {
-                                    "$inc":
+                            final_streak = user_post.get("streak") - 1
+                            if user_post.get("streak") == user_post.get("high"):
+                                numselli_collection.update_one(
+                                    {"_id": user_id}, 
                                     {
-                                        "wrong":1,
-                                        "correct":-1
-                                    },
-                                    "$set":
-                                    {
-                                        "streak":1
+                                        "$inc": {
+                                            "high": -1,
+                                            "wrong": 1,
+                                            "correct": -1,
+                                        },
+                                        "$set":{
+                                            "streak": 0,
+                                            "current_saves": current_saves,
+                                        }
                                     }
-                                }
-                            )
-                    mode="5"
-                    scores = self.bot.get_channel(sam_channel)
-                    msg = f"**{user.display_name}**'s streak with "
-                    msg += f"{mode_list[mode]} has been reset from "
-                    msg += f"**{final_streak}** to 0"
-                    embedVar = Embed(
-                        title="Streak Ruined",
-                        description=msg,
-                        color=color_lamuse
-                    )
-                    await scores.send(embed=embedVar)
+                                )
+                            else:
+                                numselli_collection.update_one(
+                                    {"_id": user_id}, 
+                                    {
+                                        "$inc": {
+                                            "wrong": 1,
+                                            "correct": -1,
+                                        },
+                                        "$set": {
+                                            "streak": 1,
+                                            "current_saves": current_saves,
+                                        }
+                                    }
+                                )
+                        mode="5"
+                        scores = self.bot.get_channel(sam_channel)
+                        msg = f"**{user.display_name}**'s streak with "
+                        msg += f"{mode_list[mode]} has been reset from "
+                        msg += f"**{final_streak}** to 0"
+                        embedVar = Embed(title="Streak Ruined", description=msg,
+                            color=color_lamuse)
+                        await scores.send(embed=embedVar)
+
+                        have_save = guild.get_role(have_save_id)
+                        dishonorable = guild.get_role(dishonorable_id)
+                        if dishonorable in user.roles:
+                            await user.remove_roles(have_save)
+                            await message.add_reaction("❌")
+                        elif current_saves >= 1:
+                            await message.add_reaction("✅")
+                        else:
+                            await user.remove_roles(have_save)
+                            msg = f"No saves left for <@{user.id}>!"
+                            await message.channel.send(msg)
+                            await message.add_reaction("❌")
 
         """Functions for dank memer"""
         if author.id == dank_bot:
