@@ -1402,6 +1402,20 @@ class Monitor(commands.Cog):
                         user_id = int(nums[0])
                         current_saves = float(nums[1])
                         user = guild.get_member(user_id)
+
+                        have_save = guild.get_role(have_save_id)
+                        dishonorable = guild.get_role(dishonorable_id)
+                        if dishonorable in user.roles:
+                            await user.remove_roles(have_save)
+                            await message.add_reaction("❌")
+                        elif current_saves >= 1:
+                            await message.add_reaction("✅")
+                        else:
+                            await user.remove_roles(have_save)
+                            msg = f"No saves left for <@{user.id}>!"
+                            await message.channel.send(msg)
+                            await message.add_reaction("❌")
+
                         user_post = numselli_collection.find_one(
                             {
                                 "_id": user_id
@@ -1494,19 +1508,6 @@ class Monitor(commands.Cog):
                         embedVar = Embed(title="Streak Ruined", description=msg,
                             color=color_lamuse)
                         await scores.send(embed=embedVar)
-
-                        have_save = guild.get_role(have_save_id)
-                        dishonorable = guild.get_role(dishonorable_id)
-                        if dishonorable in user.roles:
-                            await user.remove_roles(have_save)
-                            await message.add_reaction("❌")
-                        elif current_saves >= 1:
-                            await message.add_reaction("✅")
-                        else:
-                            await user.remove_roles(have_save)
-                            msg = f"No saves left for <@{user.id}>!"
-                            await message.channel.send(msg)
-                            await message.add_reaction("❌")
 
         """Functions for dank memer"""
         if author.id == dank_bot:
