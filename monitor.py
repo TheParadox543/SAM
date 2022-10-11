@@ -735,14 +735,33 @@ class Monitor(commands.Cog):
                 await message.add_reaction("<:blobyes:915054339796639745>")
 
         """To reset streak if error is made"""
-        if (re.findall("You have used", content) or \
-                re.findall("RUINED", content, re.I) or \
-                re.search("Wrong number!", content)) and author.bot == True : 
+        if ((re.findall("You have used", content) or # for og and beta
+                re.findall("RUINED", content, re.I) or # for classic
+                re.search("Wrong number!", content)) # for beta?
+                and author.bot == True) : 
             if message.mentions:
                 user = message.mentions[0]
                 user_id = message.mentions[0].id
                 if channel == og_channel and author.id == og_bot:
-                    saves = float(re.findall("\d+\.*\d*", content)[2])
+                    if re.findall("guild save", content):
+                        self.ruin_ban(user)
+                        msg_send = "Why did you count without a save "
+                        msg_send += f"{user.mention}!!!"
+                        await message.channel.send(msg_send)
+                        return
+                    saves_left = float(re.findall("\d+\.*\d*", content)[2])
+                    og_save:Role = guild.get_role(og_save_id)
+                    dishonorable:Role = guild.get_role(dishonorable_id)
+                    if dishonorable in user.roles:
+                        await user.remove_roles(og_save)
+                        await message.add_reaction("❌")
+                    elif saves_left >= 1:
+                        await message.add_reaction("✅")
+                    else:
+                        await user.remove_roles(og_save)
+                        msg = f"No more saves left for <@{user.id}>!"
+                        await message.channel.send(msg)
+                        await message.add_reaction("❌")
                     user_post = og_collection.find_one(
                         {
                             "_id":user_id
@@ -805,7 +824,7 @@ class Monitor(commands.Cog):
                                     "wrong":1,
                                 }, 
                                 "$set": {
-                                    "current_saves": saves,
+                                    "current_saves": saves_left,
                                 }
                             }
                         )
@@ -825,7 +844,7 @@ class Monitor(commands.Cog):
                                     },
                                     "$set":
                                     {
-                                        "current_saves": saves,
+                                        "current_saves": saves_left,
                                         "streak":0,
                                     }
                                 }
@@ -843,7 +862,7 @@ class Monitor(commands.Cog):
                                     },
                                     "$set":
                                     {
-                                        "current_saves":-1,
+                                        "current_saves": saves_left,
                                         "streak":0,
                                     }
                                 }
@@ -944,6 +963,19 @@ class Monitor(commands.Cog):
                             )
                     mode="2"
                 elif channel == beta_channel and author.id == beta_bot:
+                    saves_left = int(re.findall("\d+", content)[1])
+                    beta_save:Role = guild.get_role(beta_save_id)
+                    dishonorable:Role = guild.get_role(dishonorable_id)
+                    if dishonorable in user.roles:
+                        await user.remove_roles(beta_save)
+                        await message.add_reaction("❌")
+                    elif current_saves >= 1:
+                        await message.add_reaction("✅")
+                    else:
+                        await user.remove_roles(beta_save)
+                        msg = f"No saves left for <@{user.id}!"
+                        await message.channel.send(msg)
+                        await message.add_reaction("❌")
                     user_post = beta_collection.find_one(
                         {
                             "_id":user_id
@@ -995,6 +1027,9 @@ class Monitor(commands.Cog):
                                 "$inc": {
                                     "correct":-1,
                                     "wrong":1
+                                }, 
+                                "$set": {
+                                    "current_saves": saves_left,
                                 }
                             }
                         )
@@ -1011,7 +1046,8 @@ class Monitor(commands.Cog):
                                         "correct":-1
                                     },
                                     "$set": {
-                                        "streak":0
+                                        "streak": 0,
+                                        "current_saves": saves_left,
                                     }
                                 }
                             )
@@ -1024,7 +1060,8 @@ class Monitor(commands.Cog):
                                         "correct":-1
                                     },
                                     "$set": {
-                                        "streak":1
+                                        "streak": 0,
+                                        "current_saves": saves_left,
                                     }
                                 }
                             )
@@ -1173,46 +1210,6 @@ class Monitor(commands.Cog):
             await yoda_channel_now.send(f"<#{yoda_channel}> is unlocked since count is restored.")
 
         """All functions related to og bot"""
-        if author.id == og_bot:
-            if message.embeds:
-                embed_content = message.embeds[0].to_dict()
-                if 'description' in embed_content:
-                    descript = embed_content['description']
-                    if re.findall("saves have been deducted",descript):
-                        user_post = misc.find_one({"_id":"c!transfersave"})
-                        user:Member = guild.get_member(user_post['user'])
-                        current_saves = float(descript.split("`")[5])
-                        og_collection.update_one(
-                            {
-                                "_id":user.id
-                            }, {
-                                "$set":
-                                {
-                                    "current_saves":current_saves
-                                }
-                            }
-                        )
-                        if current_saves < 1:
-                            ogsave = guild.get_role(og_save_id)
-                            if ogsave in user.roles:
-                                await user.remove_roles(ogsave)
-                                msg = f"You can no longer count in <#{og_channel}>"
-                                msg += f"till you have 1 save <@{user.id}>"
-                                await message.channel.send(msg)
-                        else:
-                            await message.add_reaction("💾")
-                        int_list = re.findall("\d+" ,descript)
-                        user2_id = int(int_list[2])
-                        og_collection.update_one(
-                            {
-                                "_id":user2_id
-                            }, {
-                                "$inc":
-                                {
-                                    "current_saves":1
-                                }
-                            }
-                        )
 
         """All functions related to classic counting"""
         if author.id == classic_bot:
@@ -1324,6 +1321,19 @@ class Monitor(commands.Cog):
                             }
                         }
                     )
+            elif re.match("Count reset", content):
+                counter = message.mentions[0]
+                await self.ruin_ban(counter)
+                beta_collection.update_one(
+                    {"_id": counter.id}, 
+                    {
+                        "$inc": {
+                            "correct": -1,
+                            "wrong": 1,
+                            "streak": -1,
+                        }
+                    }
+                )
 
         """For reading numselli embeds"""
         if author.id == numselli_bot:
@@ -1576,10 +1586,15 @@ class Monitor(commands.Cog):
                 await self.vote_update(message, og_msg)
 
         if re.match("c!transfersave",content,re.I):
-            if misc.find_one({"_id":"c!transfersave"}):
-                misc.update_one({"_id":"c!transfersave"}, {"$set":{"user":author.id}})
+            def og_transfer_check(message:Message):
+                return message.author.id == og_bot and message.embeds
+            try:
+                og_msg:Message = await self.bot.wait_for("message", 
+                    check=og_transfer_check, timeout=10)
+            except asyncio.TimeoutError:
+                await message.channel.send("Failed to read og transfer embed.")
             else:
-                misc.insert_one({"_id":"c!transfersave","user":author.id})
+                await self.og_transfer(author, og_msg)
 
         if re.match("abc\?u",content):
             user = re.search("\d+",content)
@@ -1973,6 +1988,59 @@ class Monitor(commands.Cog):
                         }
                     )
 
+    async def og_transfer(self, sender:Member, og_message:Message):
+        embed_content = og_message.embeds[0].to_dict()
+        if re.match("Save transferred!", embed_content["title"]) is None:
+            return
+
+        guild = og_message.guild
+        dishonorable:Role = guild.get_role(dishonorable_id)
+        og_save:Role = guild.get_role(og_save_id)
+        descript = embed_content["description"]
+        num_list = re.findall("\d+\.*\d*", descript)
+        rec_id = int(num_list[1])
+        current_saves = float(num_list[3])
+
+        if current_saves < 1:
+            if og_save in sender.roles:
+                await sender.remove_roles(og_save)
+                msg = f"You can no longer count in <#{og_channel}>"
+                msg += f"till you have 1 save <@{sender.id}>"
+                await og_message.channel.send(msg)
+        else:
+            await og_message.add_reaction("💾")
+
+        receiver = guild.get_member(rec_id)
+        if dishonorable in receiver.roles:
+            await og_message.add_reaction("❌")
+            await receiver.remove_roles(og_save)
+        elif og_save in receiver.roles:
+            await og_message.add_reaction("✅")
+        else:
+            await receiver.add_roles(og_save)
+            msg = f"<@{receiver.id}> can "
+            msg += f"now count in <#{og_channel}>"
+            await og_message.channel.send(msg)
+
+        og_collection.update_one(
+            {
+                "_id":sender.id
+            }, {
+                "$set": {
+                    "current_saves":current_saves
+                }
+            }, True
+        )
+        og_collection.update_one(
+            {
+                "_id":rec_id
+            }, {
+                "$inc": {
+                    "current_saves":1
+                }
+            }, True
+        )
+
     async def numselli_user_update(self, message:Message):
         """Update numselli data from user embed."""
         embed_content = message.embeds[0].to_dict()
@@ -2095,6 +2163,27 @@ class Monitor(commands.Cog):
                 }
             }, True
         )
+
+    @commands.Cog.listener()
+    async def on_member_update(self, before:Member, after:Member):
+        """Do something when roles get changed."""
+        if len(before.roles) != len(after.roles):
+            dishonorable = before.guild.get_role(dishonorable_id)
+            if dishonorable in after.roles and dishonorable not in before.roles:
+                await self.ruin_ban(after)
+
+    async def ruin_ban(self, user:Member):
+        """Ban a user from counting channels if they ruin a count."""
+        guild = user.guild
+        dishonorable = guild.get_role(dishonorable_id)
+        og_save = guild.get_role(og_save_id)
+        have_save = guild.get_role(have_save_id)
+        beta_save = guild.get_role(beta_save_id)
+        # hermanos = guild.get_role(hermanos_id)
+        await user.add_roles(dishonorable)
+        await user.remove_roles(og_save, have_save, beta_save)#, hermanos)
+        send_channel = guild.get_channel(sam_channel)
+        await send_channel.send(f"{user.mention} has been banned from counting channels.")
 
 def setup(bot):
     """The setup command for the cog."""
