@@ -2209,15 +2209,16 @@ class Monitor(commands.Cog):
                     await scores_chnl.send(msg)
                 except nextcord.errors.Forbidden:
                     logger_monitor.error(f"Couldn't send run end msg in {scores_chnl}")
+                self.og_count = 0
 
-            channel = self.bot.get_channel(og_channel)
-            if channel is None:
+            og_send_channel = self.bot.get_channel(og_channel)
+            if og_send_channel is None:
                 return
-            if channel.name != "og-counting":
+            if og_send_channel.name != "og-counting":
                 try:
-                    await channel.edit(name="og-counting")
+                    await og_send_channel.edit(name="og-counting")
                 except nextcord.Forbidden:
-                    await channel.send("Editing channel name failed.")
+                    await og_send_channel.send("Editing channel name failed.")
                     logger_monitor.exception("Editing channel name failed.")
 
 def setup(bot):
