@@ -711,6 +711,8 @@ class Monitor(commands.Cog):
                 await message.add_reaction("🌿")
             elif number%1000 == 666:
                 await message.add_reaction("<:blobdevil:915054491227795477>")
+            elif number%1000 == 711:
+                await message.add_reaction("<:7eleven:1029416348671016980>")
             elif number%1000 == 747:
                 await message.add_reaction("✈️")
             elif number%1000 == 777:
@@ -969,7 +971,7 @@ class Monitor(commands.Cog):
                     if dishonorable in user.roles:
                         await user.remove_roles(beta_save)
                         await message.add_reaction("❌")
-                    elif current_saves >= 1:
+                    elif saves_left >= 1:
                         await message.add_reaction("✅")
                     else:
                         await user.remove_roles(beta_save)
