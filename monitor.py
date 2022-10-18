@@ -9,7 +9,7 @@ from typing import Union
 import nextcord
 from nextcord import Interaction, Embed, Member, Message, Role, TextChannel
 from nextcord import utils
-from nextcord.ext import commands
+from nextcord.ext import commands, tasks
 
 from bot_secrets import *
 from database import *
@@ -43,6 +43,7 @@ class Monitor(commands.Cog):
             else:
                 self.og_last_count = self.og_start_count
         self.og_count = 0
+        self.check_time_og.start()
 
     @commands.Cog.listener()
     async def on_message(self, message:Message):
@@ -183,6 +184,12 @@ class Monitor(commands.Cog):
                             json.dump(self.og_start_count.isoformat(), file)
                     except:
                         logger_monitor.error("Couldn't save run start.")
+                    try:
+                        chnl_name = f"og-counting-{time_now.minute}-{time_now.second}"
+                        await message.channel.edit(name=chnl_name)
+                    except nextcord.Forbidden:
+                        await message.channel.send("Editing channel name failed.")
+                        logger_monitor.exception("Editing channel name failed.")
                 else:
                     self.og_count += 1
                 self.og_last_count = time_now
@@ -2186,6 +2193,32 @@ class Monitor(commands.Cog):
         await user.remove_roles(og_save, have_save, beta_save)#, hermanos)
         send_channel = guild.get_channel(sam_channel)
         await send_channel.send(f"{user.mention} has been banned from counting channels.")
+
+    @tasks.loop(seconds=1)
+    async def check_time_og(self):
+        time_now = utils.utcnow()
+        if time_now - self.og_last_count >= timedelta(minutes=10):
+            if self.og_count >= 50:
+                start = utils.format_dt(self.og_start_count, "T")
+                stop = utils.format_dt(self.og_last_count, "T")
+                scores_chnl:TextChannel = self.bot.get_channel(sam_channel)
+                msg = f"Last run in <#{og_channel}> had "
+                msg += f"**{self.og_count}** numbers."
+                msg += f"\nRun started from {start} to {stop}."
+                try:
+                    await scores_chnl.send(msg)
+                except nextcord.errors.Forbidden:
+                    logger_monitor.error(f"Couldn't send run end msg in {scores_chnl}")
+
+            channel = self.bot.get_channel(og_channel)
+            if channel is None:
+                return
+            if channel.name != "og-counting":
+                try:
+                    await channel.edit(name="og-counting")
+                except nextcord.Forbidden:
+                    await channel.send("Editing channel name failed.")
+                    logger_monitor.exception("Editing channel name failed.")
 
 def setup(bot):
     """The setup command for the cog."""
