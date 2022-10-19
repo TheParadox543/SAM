@@ -617,114 +617,114 @@ class Stats(commands.Cog):
         embedVar = Embed(title=title_msg,description=msg,color=color_lamuse)
         await ctx.send(embed=embedVar)
 
-    @commands.command(name="alt")
-    async def alt(self, ctx:Context, user:Member):
-        """Replaces alt streaks for main streaks (only in og for now)"""
-        alt_id = ctx.author.id
-        main_id = user.id
-        if alt_id == main_id:
-            await ctx.send("Cannot make self an alt.")
-            return
+    # @commands.command(name="alt")
+    # async def alt(self, ctx:Context, user:Member):
+    #     """Replaces alt streaks for main streaks (only in og for now)"""
+    #     alt_id = ctx.author.id
+    #     main_id = user.id
+    #     if alt_id == main_id:
+    #         await ctx.send("Cannot make self an alt.")
+    #         return
 
-        f = 0
-        og_post_main = og_collection.find_one({"_id": main_id})
-        if og_post_main is not None:
-            og_collection.update_one(
-                {"_id":alt_id}, {
-                    "$set": {
-                        "streak":"No streaks",
-                        "high":"No streaks",
-                        "alt":main_id
-                    }
-                }
-            )
-            await ctx.send(f"`counting` streaks of <@{alt_id}> given to <@{main_id}>.")
-            f += 1
-            if "alt" in og_post_main:
-                og_collection.update_one(
-                    {"_id": main_id}, {
-                        "$unset": {"alt": 1,}, 
-                        "$set": {
-                            "streak": 0,
-                            "high": 0,
-                        },
-                    }
-                )
+    #     f = 0
+    #     og_post_main = og_collection.find_one({"_id": main_id})
+    #     if og_post_main is not None:
+    #         og_collection.update_one(
+    #             {"_id":alt_id}, {
+    #                 "$set": {
+    #                     "streak":"No streaks",
+    #                     "high":"No streaks",
+    #                     "alt":main_id
+    #                 }
+    #             }
+    #         )
+    #         await ctx.send(f"`counting` streaks of <@{alt_id}> given to <@{main_id}>.")
+    #         f += 1
+    #         if "alt" in og_post_main:
+    #             og_collection.update_one(
+    #                 {"_id": main_id}, {
+    #                     "$unset": {"alt": 1,}, 
+    #                     "$set": {
+    #                         "streak": 0,
+    #                         "high": 0,
+    #                     },
+    #                 }
+    #             )
 
-        classic_post_main = classic_collection.find_one({"_id": main_id})
-        if classic_post_main is not None:
-            classic_collection.update_one(
-                {"_id":alt_id}, {
-                    "$set": {
-                        "streak":"No streaks",
-                        "high":"No streaks",
-                        "alt":main_id
-                    }
-                }
-            )
-            await ctx.send(f"`classic` streaks of <@{alt_id} given to <@{main_id}>.")
-            f += 1
-            if "alt" in classic_post_main:
-                classic_collection.update_one(
-                    {"_id": main_id}, {
-                        "$unset" : {"alt": 1,}, 
-                        "$set": {
-                            "streak": 0,
-                            "high": 0,
-                        },
-                    }
-                )
+    #     classic_post_main = classic_collection.find_one({"_id": main_id})
+    #     if classic_post_main is not None:
+    #         classic_collection.update_one(
+    #             {"_id":alt_id}, {
+    #                 "$set": {
+    #                     "streak":"No streaks",
+    #                     "high":"No streaks",
+    #                     "alt":main_id
+    #                 }
+    #             }
+    #         )
+    #         await ctx.send(f"`classic` streaks of <@{alt_id} given to <@{main_id}>.")
+    #         f += 1
+    #         if "alt" in classic_post_main:
+    #             classic_collection.update_one(
+    #                 {"_id": main_id}, {
+    #                     "$unset" : {"alt": 1,}, 
+    #                     "$set": {
+    #                         "streak": 0,
+    #                         "high": 0,
+    #                     },
+    #                 }
+    #             )
 
-        numselli_post_main = numselli_collection.find_one({"_id": main_id})
-        if numselli_post_main is not None:
-            numselli_collection.update_one(
-                {"_id": alt_id}, {
-                    "$set": {
-                        "streak":"No streaks",
-                        "high":"No streaks",
-                        "alt":main_id
-                    }
-                }
-            )
-            await ctx.send(f"`Counting` streaks of<@{alt_id} given to <@{main_id}>.")
-            f += 1
-            if "alt" in numselli_post_main:
-                numselli_collection.update_one(
-                    {"_id": main_id}, {
-                        "$unset": {"alt": 1},
-                        "$set": {
-                            "streak": 0,
-                            "high": 0,
-                        },
-                    }
-                )
+    #     numselli_post_main = numselli_collection.find_one({"_id": main_id})
+    #     if numselli_post_main is not None:
+    #         numselli_collection.update_one(
+    #             {"_id": alt_id}, {
+    #                 "$set": {
+    #                     "streak":"No streaks",
+    #                     "high":"No streaks",
+    #                     "alt":main_id
+    #                 }
+    #             }
+    #         )
+    #         await ctx.send(f"`Counting` streaks of<@{alt_id} given to <@{main_id}>.")
+    #         f += 1
+    #         if "alt" in numselli_post_main:
+    #             numselli_collection.update_one(
+    #                 {"_id": main_id}, {
+    #                     "$unset": {"alt": 1},
+    #                     "$set": {
+    #                         "streak": 0,
+    #                         "high": 0,
+    #                     },
+    #                 }
+    #             )
 
-        yoda_post_main = yoda_collection.find_one({"_id": main_id})
-        if yoda_post_main is not None:
-            yoda_collection.update_one(
-                {"_id": alt_id}, {
-                    "$set": {
-                        "streaks": "No streaks",
-                        "high": "No streaks",
-                        "alt": main_id,
-                    }
-                }
-            )
-            await ctx.send(f"`yoda` streaks of <@{alt_id} given to <@{main_id}>.")
-            f += 1
-            if "alt" in yoda_post_main:
-                yoda_collection.update_one(
-                    {"_id": main_id}, {
-                        "$unset": {"alt": 1},
-                        "$set": {
-                            "streak": 0,
-                            "high": 0,
-                        },
-                    }
-                )
+    #     yoda_post_main = yoda_collection.find_one({"_id": main_id})
+    #     if yoda_post_main is not None:
+    #         yoda_collection.update_one(
+    #             {"_id": alt_id}, {
+    #                 "$set": {
+    #                     "streaks": "No streaks",
+    #                     "high": "No streaks",
+    #                     "alt": main_id,
+    #                 }
+    #             }
+    #         )
+    #         await ctx.send(f"`yoda` streaks of <@{alt_id} given to <@{main_id}>.")
+    #         f += 1
+    #         if "alt" in yoda_post_main:
+    #             yoda_collection.update_one(
+    #                 {"_id": main_id}, {
+    #                     "$unset": {"alt": 1},
+    #                     "$set": {
+    #                         "streak": 0,
+    #                         "high": 0,
+    #                     },
+    #                 }
+    #             )
 
-        if f == 0:
-            await ctx.send("No transfer of streaks was made.")
+    #     if f == 0:
+    #         await ctx.send("No transfer of streaks was made.")
 
 def setup(bot:commands.Bot):
     bot.add_cog(Stats(bot))
