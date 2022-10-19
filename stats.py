@@ -1,4 +1,5 @@
-import math
+import decimal
+from decimal import Decimal, ROUND_UP
 from typing import Literal, Union
 
 import nextcord
@@ -9,6 +10,7 @@ from nextcord.ui import View
 
 from bot_secrets import *
 from database import *
+from dicttypes import *
 
 class Stats(commands.Cog):
     """The cog containing the commnds to check the stats of the user."""
@@ -490,107 +492,110 @@ class Stats(commands.Cog):
         embedVar.set_footer(text=f"Page: {page}")
         await ctx.send(embed=embedVar)
 
-    @commands.command(aliases=["ru"])
-    async def rankup(self, ctx:Context, member:Member=None):
+    @commands.command(name="rankup", aliases=["ru"])
+    async def rankup_cmd(self, ctx:Context, member:Member=None):
         """Shows the number of counts required to increase stats"""
         user = member or ctx.author
         msg = ""
-        
-        user_post:dict = og_collection.find_one(
-            {
-                "_id":user.id
-            }, {
+
+        og_post:Optional[OGCounter] = og_collection.find_one(
+            {"_id": user.id}, {
                 "correct":1,
                 "wrong":1
             }
         )
-        if user_post:
-            correct = user_post.get("correct", 0)
-            wrong = user_post.get('wrong', 0)
+        if og_post is not None:
+            correct = Decimal(og_post.get("correct", 0))
+            wrong = Decimal(og_post.get("wrong", 0))
             total = correct + wrong
-            rate = round(float(correct/total),5)
-            if rate >= 0.9998:
+            rate = (correct / total).quantize(Decimal("1.00000"))
+            if rate >= Decimal("0.9998"):
                 msg += "`counting`: The bot can't calculate the number of counts "
                 msg += "you need to rank up\n"
             else:
-                new_rate = rate + 0.000005
-                x = math.ceil((new_rate * total - correct)/(1 - new_rate))
+                new_rate = rate + Decimal("0.000005")
+                x = ((new_rate * total - correct)/(1 - new_rate)).quantize(
+                    Decimal("1"), ROUND_UP)
                 new_cor = correct + x
-                new_rate = str(round((rate + 0.00001)*100,3))[:6]
+                new_rate = (new_rate * 100).quantize(Decimal("10.000"))
                 msg += f"`counting`: Rank up to {new_rate}% at **{new_cor}**. "
                 msg += f"You need ~**{x}** more numbers.\n"
-        user_post = classic_collection.find_one(
-            {
-                "_id":user.id
-            }, {
+
+        classic_post:Optional[ClassicCounter] = classic_collection.find_one(
+            {"_id": user.id}, {
                 "correct":1,
                 "wrong":1
             }
         )
-        if user_post:
-            correct = user_post['correct']
-            wrong = user_post.get('wrong',0)
+        if classic_post is not None:
+            decimal.getcontext().prec = 5
+            correct = Decimal(classic_post.get("correct", 0))
+            wrong = Decimal(classic_post.get("wrong", 0))
             total = correct + wrong
-            rate = correct/total
-            str_rate = str(rate)[:6]
-            rate = float(str_rate)
-            if rate >= 0.9998:
+            rate = (correct/total).quantize(Decimal("1.00000"))
+            if rate >= Decimal("0.9998"):
                 msg += "`classic`: The bot can't calculate the number of counts "
                 msg += "you need to rank up\n"
             else:
-                new_rate = rate + 0.0001
-                x = math.ceil((new_rate * total - correct)/(1 - new_rate))
+                decimal.getcontext().prec = 8
+                new_rate = rate + Decimal("0.000005")
+                x = ((new_rate * total - correct)/(1 - new_rate)).quantize(
+                    Decimal("1"), ROUND_UP)
                 new_cor = correct + x
-                new_rate = str(round(new_rate*100,2))[:5]
+                new_rate = (new_rate * 100).quantize(Decimal("10.000"))
                 msg += f"`classic`: Rank up to {new_rate}% at **{new_cor}**. "
                 msg += f"You need ~**{x}** more numbers.\n"
-        user_post = beta_collection.find_one(
-            {
-                "_id":user.id
-            }, {
+
+        beta_post: Optional[BetaCounter] = beta_collection.find_one(
+            {"_id": user.id}, {
                 "correct":1,
                 "wrong":1
             }
         )
-        if user_post:
-            correct = user_post['correct']
-            wrong = user_post.get('wrong',0)
+        if beta_post is not None:
+            correct = Decimal(beta_post.get("correct", 0))
+            wrong = Decimal(beta_post.get("wrong", 0))
             total = correct + wrong
-            rate = round(float(correct/total),4)
-            if rate >= 0.9998:
+            rate = (correct/total).quantize(Decimal("1.0000"))
+            if rate >= Decimal("0.9998"):
                 msg += "`alphabeta`: The bot can't calculate the number of counts "
                 msg += "you need to rank up\n"
             else:
-                new_rate = rate + 0.00005
-                x = math.ceil((new_rate * total - correct)/(1 - new_rate))
+                new_rate = rate + Decimal("0.00005")
+                x = ((new_rate * total - correct)/(1 - new_rate)).quantize(
+                    Decimal("1"), ROUND_UP)
                 new_cor = correct + x
-                new_rate = str(round((rate + 0.0001)*100,2))[:5]
+                new_rate = (new_rate * 100).quantize(Decimal("10.00"))
                 msg += f"`alphabeta`: Rank up to {new_rate}% at **{new_cor}**. "
                 msg += f"You need ~**{x}** more numbers.\n"
-        user_post = numselli_collection.find_one(
-            {
-                "_id":user.id
-            }, {
+
+        numselli_post: Optional[NumselliCounter] = numselli_collection.find_one(
+            {"_id": user.id}, {
                 "correct":1,
                 "wrong":1
             }
         )
-        if user_post:
-            correct = user_post['correct']
-            wrong = user_post.get('wrong',0)
+        if numselli_post is not None:
+            correct = Decimal(numselli_post.get("correct", 0))
+            wrong = Decimal(numselli_post.get("wrong", 0))
+            # print(correct, wrong)
             total = correct + wrong
-            rate = round(float(correct/total),4)
-            if rate >= 0.9998:
+            rate = (correct/total).quantize(Decimal("1.0000"))
+            # print(total, rate)
+            if rate >= Decimal("0.9998"):
                 msg += "`numselli`: The bot can't calculate the number of counts "
                 msg += "you need to rank up\n"
             else:
-                new_rate = rate + 0.00005
-                x = math.ceil((new_rate * total - correct)/(1 - new_rate))
+                new_rate = rate + Decimal("0.00005")
+                x = ((new_rate * total - correct)/(1 - new_rate)).quantize(
+                    Decimal("1"), ROUND_UP)
+                # print(x)
                 new_cor = correct + x
-                new_rate = str(round((rate + 0.0001)*100,2))[:5]
+                new_rate = (new_rate * 100).quantize(Decimal("10.00"))
                 msg += f"`numselli`: Rank up to {new_rate}% at **{new_cor}**. "
                 msg += f"You need ~**{x}** more numbers.\n"
-        user_post = yoda_collection.find_one(
+
+        yoda_post: Optional[YodaCounter] = yoda_collection.find_one(
             {
                 "_id":user.id
             }, {
@@ -598,23 +603,28 @@ class Stats(commands.Cog):
                 "wrong":1
             }
         )
-        if user_post:
-            correct = user_post['correct']
-            wrong = user_post.get('wrong',0)
+        if yoda_post is not None:
+            correct = Decimal(yoda_post.get("correct", 0))
+            wrong = Decimal(yoda_post.get("wrong", 0))
             total = correct + wrong
-            rate = round(float(correct/total),4)
-            if rate >= 0.9998:
+            rate = (correct/total).quantize(Decimal("1.00000"))
+            if rate >= Decimal("0.9998"):
                 msg += "`yoda`: The bot can't calculate the number of counts "
                 msg += "you need to rank up\n"
             else:
-                new_rate = rate + 0.00005
-                x = math.ceil((new_rate * total - correct)/(1 - new_rate))
+                new_rate = rate + Decimal("0.000005")
+                x = ((new_rate * total - correct)/(1 - new_rate)).quantize(
+                    Decimal("1"), ROUND_UP)
                 new_cor = correct + x
-                new_rate = str(round((rate + 0.0001)*100,2))[:5]
+                new_rate = (new_rate * 100).quantize(Decimal("10.000"))
                 msg += f"`yoda`: Rank up to {new_rate}% at **{new_cor}**. "
                 msg += f"You need ~**{x}** more numbers.\n"
+
+        if msg == "":
+            msg = "Run counting commands first!"
+
         title_msg = f"Rank up stats for {user}"
-        embedVar = Embed(title=title_msg,description=msg,color=color_lamuse)
+        embedVar = Embed(title=title_msg, description=msg, color=color_lamuse)
         await ctx.send(embed=embedVar)
 
     # @commands.command(name="alt")
