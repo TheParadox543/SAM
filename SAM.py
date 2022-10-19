@@ -67,29 +67,32 @@ async def check_time():
 @tasks.loop(time=time(hour=23,minute=59,second=59,tzinfo=None))
 async def daily():
     time = datetime.utcnow().isoformat()[:10]
-    cursor = og_collection.find(
-        {
-            "daily":
-            {
-                "$gte":1
+    cursor = og_collection.find({
+            "daily":{
+                "$gte": 1
             }
         }, {
-            "name":1,
-            "daily":1
+            "name": 1,
+            "daily": 1,
         }
     ).sort("daily", -1)
-    msg = ""
+    msg = "Total numbers counted today: <!@#TOTALCOUNTED!@#>"
+    total = 0
     i = 0
     for user in cursor:
         i += 1 
-        name = user.get("name","Unknown")
-        daily = user.get("daily",">1")
+        name = user.get("name", "Unknown")
+        daily = user.get("daily", ">1")
+        try:
+            total += int(daily)
+        except:
+            pass
         msg += f"\n{i}. {name} - {daily}"
-    embedVar = Embed(title=f"{time}",description=msg,color=color_lamuse)
+    msg = msg.replace("<!@#TOTALCOUNTED!@#>", str(total), 1)
+    embedVar = Embed(title=f"{time}", description=msg, color=color_lamuse)
     scores:TextChannel = bot.get_channel(sam_channel)
     await scores.send(embed=embedVar)
-    og_collection.update_many(
-        {
+    og_collection.update_many({
             "daily": {
                 "$gte": 1
             }
