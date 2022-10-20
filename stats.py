@@ -498,8 +498,9 @@ class Stats(commands.Cog):
         user = member or ctx.author
         msg = ""
 
-        og_post:Optional[OGCounter] = og_collection.find_one(
-            {"_id": user.id}, {
+        og_post:Optional[OGCounter] = og_collection.find_one({
+                "_id": user.id
+            }, {
                 "correct":1,
                 "wrong":1
             }
@@ -521,14 +522,14 @@ class Stats(commands.Cog):
                 msg += f"`counting`: Rank up to {new_rate}% at **{new_cor}**. "
                 msg += f"You need ~**{x}** more numbers.\n"
 
-        classic_post:Optional[ClassicCounter] = classic_collection.find_one(
-            {"_id": user.id}, {
+        classic_post:Optional[ClassicCounter] = classic_collection.find_one({
+                "_id": user.id
+            }, {
                 "correct":1,
                 "wrong":1
             }
         )
         if classic_post is not None:
-            decimal.getcontext().prec = 5
             correct = Decimal(classic_post.get("correct", 0))
             wrong = Decimal(classic_post.get("wrong", 0))
             total = correct + wrong
@@ -546,8 +547,9 @@ class Stats(commands.Cog):
                 msg += f"`classic`: Rank up to {new_rate}% at **{new_cor}**. "
                 msg += f"You need ~**{x}** more numbers.\n"
 
-        beta_post: Optional[BetaCounter] = beta_collection.find_one(
-            {"_id": user.id}, {
+        beta_post: Optional[BetaCounter] = beta_collection.find_one({
+                "_id": user.id
+            }, {
                 "correct":1,
                 "wrong":1
             }
@@ -569,8 +571,9 @@ class Stats(commands.Cog):
                 msg += f"`alphabeta`: Rank up to {new_rate}% at **{new_cor}**. "
                 msg += f"You need ~**{x}** more numbers.\n"
 
-        numselli_post: Optional[NumselliCounter] = numselli_collection.find_one(
-            {"_id": user.id}, {
+        numselli_post: Optional[NumselliCounter] = numselli_collection.find_one({
+                "_id": user.id
+            }, {
                 "correct":1,
                 "wrong":1
             }
@@ -578,10 +581,8 @@ class Stats(commands.Cog):
         if numselli_post is not None:
             correct = Decimal(numselli_post.get("correct", 0))
             wrong = Decimal(numselli_post.get("wrong", 0))
-            # print(correct, wrong)
             total = correct + wrong
             rate = (correct/total).quantize(Decimal("1.0000"))
-            # print(total, rate)
             if rate >= Decimal("0.9998"):
                 msg += "`numselli`: The bot can't calculate the number of counts "
                 msg += "you need to rank up\n"
@@ -595,8 +596,7 @@ class Stats(commands.Cog):
                 msg += f"`numselli`: Rank up to {new_rate}% at **{new_cor}**. "
                 msg += f"You need ~**{x}** more numbers.\n"
 
-        yoda_post: Optional[YodaCounter] = yoda_collection.find_one(
-            {
+        yoda_post: Optional[YodaCounter] = yoda_collection.find_one({
                 "_id":user.id
             }, {
                 "correct":1,
