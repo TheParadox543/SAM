@@ -62,6 +62,8 @@ async def check_time():
                 channel_send_id:int = cursor.get("channel", 
                     scores_channel if command != "work shift" else dank_channel)
                 channel_send:TextChannel = bot.get_channel(channel_send_id)
+                if command == "work shift":
+                    command = f"</{command}:1011560371267579942>"
                 await channel_send.send(f"<@{user_id}> time to {command}.")
 
 @tasks.loop(time=time(hour=23,minute=59,second=59,tzinfo=None))
