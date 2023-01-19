@@ -24,9 +24,6 @@ class BetaCounter(BaseCounter, total=False):
     total_saves: int
     counter: bool
 
-class YodaCounter(BaseCounter, total=False):
-    tokens: float
-
 class NumselliCounter(BaseCounter, total=False):
     current_saves: float
     total_saves: int

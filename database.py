@@ -15,7 +15,6 @@ classic_collection = db["classiccollection"]
 abc_collection = db["abccollection"]
 beta_collection = db["betacollection"]
 numselli_collection = db["numsellicollection"]
-yoda_collection = db["yodacollection"]
 misc = db["misc"]
 time_collection = db["time"]
 dank_collection = db["dank"]
@@ -35,7 +34,6 @@ track_list = [
     numselli_channels["five"],
     numselli_channels["ten"],
     numselli_channels["hundred"],
-    yoda_channel,
 ]
 
 emoji_list = [
@@ -59,7 +57,6 @@ mode_list = {
     "3": "**ABC Counting**",
     "4": "**AlphaBeta**",
     "5": "**Numselli**",
-    "6": "**yoda**",
 }
 
 roman = {

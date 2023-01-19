@@ -538,131 +538,6 @@ class Monitor(commands.Cog):
                             if (streak+1)%500==0:
                                 msg_s = f"{(streak+1)}"
                     mode = "5"
-            elif channel == yoda_channel and re.match("\d", number_str):
-                try:
-                    number = int(number_str)
-                except:
-                    return
-                if number == 0:
-                    pass
-                user_post = yoda_collection.find_one(
-                    {
-                        "_id":user_id
-                    }, {
-                        "streak": 1,
-                        "high": 1,
-                        "alt": 1,
-                        "tokens": 1,
-                    }
-                )
-                if user_post is not None:
-                    tokens:float = min(user_post.get("tokens", 0)+0.001, 2)
-                    if "alt" in user_post:
-                        user_main = user_post.get("alt")
-                        user = guild.get_member(user_main)
-                        user_post2:dict = yoda_collection.find_one(
-                            {
-                                "_id":user_main
-                            }, {
-                                "streak":1,
-                                "high":1
-                            }
-                        )
-                        streak = user_post2.get("streak", 0)
-                        if streak == user_post2.get("high", 0):
-                            yoda_collection.update_one(
-                                {
-                                    "_id":user_main
-                                }, {
-                                    "$inc": {
-                                        "streak":1,
-                                        "high":1,
-                                    }
-                                }
-                            )
-                            if (streak+1)%500==0:
-                                msg_s = f"n{(streak+1)}"
-                        else:
-                            yoda_collection.update_one(
-                                {
-                                    "_id":user_main
-                                }, {
-                                    "$inc": {
-                                        "streak":1
-                                    }
-                                }
-                            )
-                            if (user_post2['streak']+1)%500==0:
-                                msg_s = f"{(user_post2['streak']+1)}"
-                        yoda_collection.update_one(
-                            {
-                                "_id":user_id
-                            }, {
-                                "$inc": {
-                                    "correct":1
-                                }, 
-                                "$set": {
-                                    "tokens": tokens,
-                                }
-                            }
-                        )
-                    else:
-                        streak = user_post.get("streak", 0)
-                        if streak == user_post.get('high', 0):
-                            yoda_collection.update_one(
-                                {
-                                    "_id":user_id
-                                }, {
-                                    "$inc": {
-                                        "streak":1,
-                                        "high":1,
-                                        "correct":1
-                                    }, 
-                                    "$set": {
-                                        "tokens": tokens,
-                                    }
-                                }
-                            )
-                            if (streak+1)%500==0:
-                                msg_s = f"n{(streak+1)}"
-                        else:
-                            yoda_collection.update_one(
-                                {
-                                    "_id":user_id
-                                }, {
-                                    "$inc": {
-                                        "streak":1,
-                                        "correct":1
-                                    }, 
-                                    "$set": {
-                                        "tokens": tokens,
-                                    }
-                                }
-                            )
-                            if (streak+1)%500==0:
-                                msg_s = f"{(streak+1)}"
-                    mode = "6"
-                else:
-                    yoda_collection.insert_one(
-                        {
-                            "_id":user_id,
-                            "name":f"{author}",
-                            "correct":1,
-                            "wrong":0,
-                            "streak":1,
-                            "high":1, 
-                            "tokens": 0.001
-                        }
-                    )
-                misc.update_one(
-                    {
-                        "_id": "yoda count",
-                    }, {
-                        "$set": {
-                            "last_counter": user_id,
-                        }
-                    }, True
-                )
             else: 
                 return
             rev_num = number_str[::-1]
@@ -677,7 +552,7 @@ class Monitor(commands.Cog):
                         if number==3_000_000:
                             msg = f"**WE HIT __THREE MILLION__** at <t:{time}:F>. "
                             msg += "**THIS IS AMAZING. LET'S KEEP GOING.**"
-                            await self.mile_chnl.send(msg)
+                            await milestone.send(msg)
                         else:
                             if channel == og_channel \
                                     or channel == numselli_channels["whole"]:
@@ -1089,135 +964,6 @@ class Monitor(commands.Cog):
                 await scores.send(embed=embedVar)
         """If mistake is made in numselli bot, handled by numselli embed handler."""
 
-        ## If mistake made in yoda.
-        if (author.id == yoda_bot and content.startswith("Failed you may ")):
-            last_counter:Union[dict, None] = misc.find_one(
-                {
-                    "_id":"yoda count"
-                }
-            )
-            if last_counter is None:
-                return
-            counter_id:int = last_counter.get("last_counter")
-            counter_post = yoda_collection.find_one(
-                {
-                    "_id": counter_id
-                }, {
-                    "streak":1,
-                    "high":1,
-                    "alt":1
-                }
-            )
-            if "alt" in counter_post:
-                user_main = counter_post["alt"]
-                user = guild.get_member(user_main)
-                counter_post2 = yoda_collection.find_one(
-                    {
-                        "_id":user_main
-                    }, {
-                        "streak":1,
-                        "high":1
-                    }
-                )
-                final_streak = counter_post2["streak"] - 1
-                if counter_post2['streak'] == counter_post2['high']:
-                    yoda_collection.update_one(
-                        {
-                            "_id":user_main
-                        }, {
-                            "$inc":
-                            {
-                                "high":-1
-                            },
-                            "$set":
-                            {
-                                "streak":0
-                            }
-                        }
-                    )
-                else:
-                    yoda_collection.update_one(
-                        {
-                            "_id":user_main
-                        }, {
-                            "$set":
-                            {
-                                "streak":0
-                            }
-                        }
-                    )
-                yoda_collection.update_one(
-                    {
-                        "_id":counter_id
-                    }, {
-                        "$inc":
-                        {
-                            "correct":-1,
-                            "wrong":1
-                        }
-                    }
-                )
-            else:
-                final_streak = counter_post['streak'] - 1
-                if counter_post['streak'] == counter_post['high']:
-                    yoda_collection.update_one(
-                        {
-                            "_id":counter_id
-                        }, {
-                            "$inc":
-                            {
-                                "high":-1,
-                                "wrong":1,
-                                "correct":-1
-                            },
-                            "$set":
-                            {
-                                "streak":0
-                            }
-                        }
-                    )
-                else:
-                    yoda_collection.update_one(
-                        {"_id":counter_id},
-                        {
-                            "$inc":
-                            {
-                                "wrong":1,
-                                "correct":-1
-                            },
-                            "$set":
-                            {
-                                "streak":1
-                            }
-                        }
-                    )
-            mode="6"
-            counter = guild.get_member(counter_id)
-            scores = self.bot.get_channel(sam_channel)
-            msg = f"**{counter.display_name}**'s streak with "
-            msg += f"{mode_list[mode]} has been reset from "
-            msg += f"**{final_streak}** to 0"
-            embedVar = Embed(
-                title="Streak Ruined",
-                description=msg,
-                color=color_lamuse
-            )
-            await scores.send(embed=embedVar)
-            countaholics = guild.get_role(countaholic_id)
-            overwrites = message.channel.overwrites_for(countaholics)
-            overwrites.update(send_messages=False)
-            await message.channel.set_permissions(countaholics, overwrite=overwrites)
-            await message.channel.send(f"<#{yoda_channel}> is locked till it is restored.")
-
-        ## Unlock on paying yoda.
-        if (author.id == yoda_bot and content.startswith("Paid you have")):
-            countaholics = guild.get_role(countaholic_id)
-            yoda_channel_now = guild.get_channel(yoda_channel)
-            overwrites = yoda_channel_now.overwrites_for(countaholics)
-            overwrites.update(send_messages=True)
-            await yoda_channel_now.set_permissions(countaholics, overwrite=overwrites)
-            await yoda_channel_now.send(f"<#{yoda_channel}> is unlocked since count is restored.")
-
         """All functions related to og bot"""
 
         """All functions related to classic counting"""
@@ -1577,7 +1323,7 @@ class Monitor(commands.Cog):
                 return bool
             try:
                 og_msg:Message = await self.bot.wait_for("message", 
-                    check=og_user_check, timeout=10)
+                    check=og_user_check, timeout=15)
             except asyncio.TimeoutError:
                 await message.channel.send("Failed to read `counting` embed.")
             else:
@@ -1636,17 +1382,6 @@ class Monitor(commands.Cog):
                     misc.update_one({"_id":"abc?gift"}, {"$set":{"user":userID}})
                 else:
                     misc.insert_one({"_id":"abc?gift","user":userID})
-
-        if content.startswith("y!userstats"):
-            def check(m:Message):
-                return m.author.id==yoda_bot and m.embeds
-            try:
-                yoda_message:Message = await self.bot.wait_for("message", 
-                    check=check, timeout=5)
-            except asyncio.TimeoutError:
-                await message.channel.send("Failed to read yoda embed.")
-            else:
-                self.yoda_update(yoda_message, author)
 
         if len(content) > 0 and content[0] == ":" and content[-1] == ":":
             emoji_name = content[1:-1]
@@ -1926,44 +1661,44 @@ class Monitor(commands.Cog):
         dm = counter_post.get("dm", False)
         if rem:
             field1 = embed_content["fields"][0]["value"]
-            field2 = embed_content["fields"][1]["value"]
+            # field2 = embed_content["fields"][1]["value"]
             channel_id = message.channel.id
             if re.search("You have already", field1):
-                time1 = re.findall("[\d\.]+", field1)
-                hour1 = float(time1[1]) + 0.05
-                time_now = datetime.utcnow().replace(microsecond=0)
-                time_new = time_now + timedelta(hours=hour1)
-                if time_collection.find_one(
-                    {
-                        "user": user.id,
-                        "command": "vote in Discords.com"
-                    }
-                ):
-                    time_collection.update_one(
-                        {
-                            "user": user.id,
-                            "command": "vote in Discords.com"
-                        }, {
-                            "$set":
-                            {
-                                "time": time_new,
-                                "dm": dm,
-                                "channel": channel_id,
-                            }
-                        }
-                    )
-                else:
-                    time_collection.insert_one(
-                        {
-                            "time": time_new,
-                            "user": user.id,
-                            "command": "vote in Discords.com",
-                            "dm": dm,
-                            "channel": channel_id,
-                        }
-                    )
-            if re.search("You have already", field2):
-                time2 = re.findall("[\d\.]+", field2)
+            #     time1 = re.findall("[\d\.]+", field1)
+            #     hour1 = float(time1[1]) + 0.05
+            #     time_now = datetime.utcnow().replace(microsecond=0)
+            #     time_new = time_now + timedelta(hours=hour1)
+            #     if time_collection.find_one(
+            #         {
+            #             "user": user.id,
+            #             "command": "vote in Discords.com"
+            #         }
+            #     ):
+            #         time_collection.update_one(
+            #             {
+            #                 "user": user.id,
+            #                 "command": "vote in Discords.com"
+            #             }, {
+            #                 "$set":
+            #                 {
+            #                     "time": time_new,
+            #                     "dm": dm,
+            #                     "channel": channel_id,
+            #                 }
+            #             }
+            #         )
+            #     else:
+            #         time_collection.insert_one(
+            #             {
+            #                 "time": time_new,
+            #                 "user": user.id,
+            #                 "command": "vote in Discords.com",
+            #                 "dm": dm,
+            #                 "channel": channel_id,
+            #             }
+            #         )
+            # if re.search("You have already", field2):
+                time2 = re.findall("[\d\.]+", field1)
                 hour2 = float(time2[1]) + 0.05
                 time_now = datetime.utcnow().replace(microsecond=0)
                 time_new = time_now + timedelta(hours=hour2)
@@ -2153,25 +1888,6 @@ class Monitor(commands.Cog):
                         await message.channel.send(msg)
                     else:
                         await beta_message.add_reaction("❌")
-
-    def yoda_update(self, yoda_message:Message, author:Member):
-        """Input yoda details after reading the embed."""
-        embed_content = yoda_message.embeds[0].to_dict()
-        descr = embed_content["description"]
-        correct = int(descr.split("**")[3])
-        wrong = int(descr.split("**")[5])
-        tokens = float(descr.split("**")[9].split("/")[0])
-        yoda_collection.update_one(
-            {
-                "_id": author.id
-            }, {
-                "$set": {
-                    "correct": correct,
-                    "wrong": wrong,
-                    "tokens": tokens,
-                }
-            }, True
-        )
 
     @commands.Cog.listener()
     async def on_member_update(self, before:Member, after:Member):

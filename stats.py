@@ -18,6 +18,7 @@ class Stats(commands.Cog):
     def __init__(self, bot:commands.Bot):
         """Initialize the cog."""
         self.bot = bot
+        decimal.getcontext().rounding = decimal.ROUND_HALF_UP
 
     @nextcord.slash_command(guild_ids=servers)
     async def id(self, ctx:Context, user:Member):
@@ -123,28 +124,6 @@ class Stats(commands.Cog):
             msg += f"\nHighest Streak: {user_post.get('high', 0)}"
             msg += "\n\n</user:918251622059098182>"
             embedVar.add_field(name=mode_list["5"], value=msg)
-        user_post = yoda_collection.find_one({"_id": user.id})
-        if user_post:
-            correct = user_post.get("correct", 0)
-            wrong = user_post.get("wrong", 0)
-            total = correct + wrong
-            if total == 0:
-                rate = 0
-            else:
-                rate = round(float(correct/total)*100, 2)
-            tokens = user_post.get("tokens", 0)
-            if tokens == int(tokens):
-                tokens = int(tokens)
-            else:
-                tokens = round(tokens, 3)
-            msg = f"Rate: {rate}%"
-            msg += f"\nCorrect: {correct}"
-            msg += f"\nWrong: {wrong}"
-            msg += f"\nTokens: {tokens}/2"
-            msg += f"\n\nCurrent Streak: {user_post.get('streak', 0)}"
-            msg += f"\nHighest Streak: {user_post.get('high', 0)}"
-            msg += "\n\n`y!userstats`"
-            embedVar.add_field(name=mode_list["6"], value=msg)
         await ctx.send(embed=embedVar)
 
     @commands.command(name="currentscore", aliases=["cs"])
@@ -596,30 +575,6 @@ class Stats(commands.Cog):
                 msg += f"`numselli`: Rank up to {new_rate}% at **{new_cor}**. "
                 msg += f"You need ~**{x}** more numbers.\n"
 
-        yoda_post: Optional[YodaCounter] = yoda_collection.find_one({
-                "_id":user.id
-            }, {
-                "correct":1,
-                "wrong":1
-            }
-        )
-        if yoda_post is not None:
-            correct = Decimal(yoda_post.get("correct", 0))
-            wrong = Decimal(yoda_post.get("wrong", 0))
-            total = correct + wrong
-            rate = (correct/total).quantize(Decimal("1.00000"))
-            if rate >= Decimal("0.9998"):
-                msg += "`yoda`: The bot can't calculate the number of counts "
-                msg += "you need to rank up\n"
-            else:
-                new_rate = rate + Decimal("0.000005")
-                x = ((new_rate * total - correct)/(1 - new_rate)).quantize(
-                    Decimal("1"), ROUND_UP)
-                new_cor = correct + x
-                new_rate = (new_rate * 100).quantize(Decimal("10.000"))
-                msg += f"`yoda`: Rank up to {new_rate}% at **{new_cor}**. "
-                msg += f"You need ~**{x}** more numbers.\n"
-
         if msg == "":
             msg = "Run counting commands first!"
 
@@ -700,30 +655,6 @@ class Stats(commands.Cog):
     #         f += 1
     #         if "alt" in numselli_post_main:
     #             numselli_collection.update_one(
-    #                 {"_id": main_id}, {
-    #                     "$unset": {"alt": 1},
-    #                     "$set": {
-    #                         "streak": 0,
-    #                         "high": 0,
-    #                     },
-    #                 }
-    #             )
-
-    #     yoda_post_main = yoda_collection.find_one({"_id": main_id})
-    #     if yoda_post_main is not None:
-    #         yoda_collection.update_one(
-    #             {"_id": alt_id}, {
-    #                 "$set": {
-    #                     "streaks": "No streaks",
-    #                     "high": "No streaks",
-    #                     "alt": main_id,
-    #                 }
-    #             }
-    #         )
-    #         await ctx.send(f"`yoda` streaks of <@{alt_id} given to <@{main_id}>.")
-    #         f += 1
-    #         if "alt" in yoda_post_main:
-    #             yoda_collection.update_one(
     #                 {"_id": main_id}, {
     #                     "$unset": {"alt": 1},
     #                     "$set": {
