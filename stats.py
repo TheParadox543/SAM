@@ -3,7 +3,7 @@ from decimal import Decimal, ROUND_UP
 from typing import Literal, Union
 
 import nextcord
-from nextcord import Embed, Interaction, Member, SlashOption
+from nextcord import Button, ButtonStyle, Embed, Interaction, Member, SlashOption
 from nextcord.ext import commands
 from nextcord.ext.commands import Context
 from nextcord.ui import View
@@ -11,6 +11,8 @@ from nextcord.ui import View
 from bot_secrets import *
 from database import *
 from dicttypes import *
+
+alt_start_msg = "So {alt}, you want to transfer your streaks to {main}. Well, that's cool. Although keep in mind that only from this point onwards do I track that you are an alt of {main}. This means that your current streak will not be added to your main, neither will your streak be saved anywhere else. \n\nRed button means that your streaks have already been transferred to someone else.\nGreen button means you have already transferred streaks to the {main}.\nGrey means no streaks have been transferred."
 
 class Stats(commands.Cog):
     """The cog containing the commnds to check the stats of the user."""
@@ -582,90 +584,335 @@ class Stats(commands.Cog):
         embedVar = Embed(title=title_msg, description=msg, color=color_lamuse)
         await ctx.send(embed=embedVar)
 
-    # @commands.command(name="alt")
-    # async def alt(self, ctx:Context, user:Member):
-    #     """Replaces alt streaks for main streaks (only in og for now)"""
-    #     alt_id = ctx.author.id
-    #     main_id = user.id
-    #     if alt_id == main_id:
-    #         await ctx.send("Cannot make self an alt.")
-    #         return
+    @commands.command(name="alt")
+    async def alt(self, ctx:Context, user:Optional[Member]=None):
+        """Replaces alt streaks for main streaks"""
+        # * user should accept transfer
+        if user is not None:
+            alt_id = ctx.author.id
+            main_id = user.id
+            if alt_id == main_id:
+                await ctx.send("Cannot make self an alt.")
+                return
 
-    #     f = 0
-    #     og_post_main = og_collection.find_one({"_id": main_id})
-    #     if og_post_main is not None:
-    #         og_collection.update_one(
-    #             {"_id":alt_id}, {
-    #                 "$set": {
-    #                     "streak":"No streaks",
-    #                     "high":"No streaks",
-    #                     "alt":main_id
-    #                 }
-    #             }
-    #         )
-    #         await ctx.send(f"`counting` streaks of <@{alt_id}> given to <@{main_id}>.")
-    #         f += 1
-    #         if "alt" in og_post_main:
-    #             og_collection.update_one(
-    #                 {"_id": main_id}, {
-    #                     "$unset": {"alt": 1,}, 
-    #                     "$set": {
-    #                         "streak": 0,
-    #                         "high": 0,
-    #                     },
-    #                 }
-    #             )
+            transfer = AltView(ctx.author, user)
+            if transfer.streaks == 0:
+                await ctx.send(f"Can't transfer streaks. Check if revelant stats are there.")
+            else:
+                descr = alt_start_msg.replace("{alt}", f"`{ctx.author.display_name}`")
+                descr = descr.replace("{main}", f"`{user.display_name}`")
+                embedVar = Embed(color=color_lamuse, description=descr)
+                await ctx.send(embed=embedVar, view=transfer)
+        else:
+            return
 
-    #     classic_post_main = classic_collection.find_one({"_id": main_id})
-    #     if classic_post_main is not None:
-    #         classic_collection.update_one(
-    #             {"_id":alt_id}, {
-    #                 "$set": {
-    #                     "streak":"No streaks",
-    #                     "high":"No streaks",
-    #                     "alt":main_id
-    #                 }
-    #             }
-    #         )
-    #         await ctx.send(f"`classic` streaks of <@{alt_id} given to <@{main_id}>.")
-    #         f += 1
-    #         if "alt" in classic_post_main:
-    #             classic_collection.update_one(
-    #                 {"_id": main_id}, {
-    #                     "$unset" : {"alt": 1,}, 
-    #                     "$set": {
-    #                         "streak": 0,
-    #                         "high": 0,
-    #                     },
-    #                 }
-    #             )
+class AltView(View):
+    """
+    Register an account as an alt and let streak counts be 
+    given to a main account.
+    """
 
-    #     numselli_post_main = numselli_collection.find_one({"_id": main_id})
-    #     if numselli_post_main is not None:
-    #         numselli_collection.update_one(
-    #             {"_id": alt_id}, {
-    #                 "$set": {
-    #                     "streak":"No streaks",
-    #                     "high":"No streaks",
-    #                     "alt":main_id
-    #                 }
-    #             }
-    #         )
-    #         await ctx.send(f"`Counting` streaks of<@{alt_id} given to <@{main_id}>.")
-    #         f += 1
-    #         if "alt" in numselli_post_main:
-    #             numselli_collection.update_one(
-    #                 {"_id": main_id}, {
-    #                     "$unset": {"alt": 1},
-    #                     "$set": {
-    #                         "streak": 0,
-    #                         "high": 0,
-    #                     },
-    #                 }
-    #             )
+    def __init__(self, alt: Member, main: Member):
+        """Initialize the view."""
+        super().__init__()
+        self.alt = alt
+        self.main = main
+        self.streaks = 5
+        self.og_btn: Button
+        self.classic_btn: Button
+        self.beta_btn: Button
+        self.num_btn: Button
+        self.call_data()
 
-    #     if f == 0:
-    #         await ctx.send("No transfer of streaks was made.")
+    @nextcord.ui.button(label="og")
+    async def og_btn(self, button: Button, interaction: Interaction):
+        """Select og option."""
+        if interaction.user != self.alt:
+            return  # ! can't send message, running into run time error
+        if self.og is True:
+            button.style = ButtonStyle.grey
+            self.og = None
+        else:
+            button.style = ButtonStyle.green
+            self.og = True
+        await interaction.response.edit_message(view=self)
+
+    @nextcord.ui.button(label="classic", style=ButtonStyle.danger)
+    async def classic_btn(self, button: Button, interaction: Interaction) -> Button:
+        """Select classic option."""
+        if interaction.user != self.alt:
+            return
+        if self.classic is True:
+            button.style = ButtonStyle.grey
+            self.classic = None
+        else:
+            button.style = ButtonStyle.green
+            self.classic = True
+        await interaction.response.edit_message(view=self)
+
+    @nextcord.ui.button(label="beta", style=ButtonStyle.primary)
+    async def beta_btn(self, button: Button, interaction: Interaction):
+        """Select beta option."""
+        if interaction.user != self.alt:
+            return
+        if self.beta is True:
+            button.style = ButtonStyle.grey
+            self.beta = None
+        else:
+            button.style = ButtonStyle.green
+            self.beta = True
+        await interaction.response.edit_message(view=self)
+
+    @nextcord.ui.button(label="numselli", style=ButtonStyle.secondary)
+    async def num_btn(self, button: Button, interaction: Interaction):
+        """Select numselli option."""
+        if interaction.user != self.alt:
+            return
+        if self.num is True:
+            button.style = ButtonStyle.grey
+            self.num = None
+        else:
+            button.style = ButtonStyle.green
+            self.num = True
+        await interaction.response.edit_message(view=self)
+
+    @nextcord.ui.button(label="PROCEED", row=1, style=ButtonStyle.green)
+    async def accept_btn(self, button: Button, interaction: Interaction):
+        """Accept combining of streaks."""
+        if interaction.user != self.alt:
+            return
+        child: Button
+        for child in self.children:
+            child.disabled = not child.disabled
+        msg = f"{self.main.mention} do you accept the transfer of streaks?\n The "
+        msg += "buttons in green represent the streaks being transferred to you."
+        await interaction.response.edit_message(content=msg,
+                                                embed=None, view=self)
+
+    @nextcord.ui.button(label="CANCEL", row=1, style=ButtonStyle.red)
+    async def decline_btn(self, button: Button, interaction: Interaction):
+        """Decline combining of streaks."""
+        if interaction.user != self.alt:
+            return
+        child: Button
+        for child in self.children:
+            child.disabled = True
+        await interaction.response.edit_message(content="You have cancelled the transfer.",
+                                                embed=None, view=self)
+
+    @nextcord.ui.button(label="ACCEPT", row=2, style=ButtonStyle.green, disabled=True)
+    async def main_accept_btn(self, button: Button, interaction: Interaction):
+        """Accept combining of streaks."""
+        if interaction.user != self.main:
+            return
+        child: Button
+        for child in self.children:
+            child.disabled = True
+        msg = f"Streaks have been transferred. Check stats of {self.alt.mention}."
+        await interaction.response.edit_message(content=msg, view=self)
+        send_msg = self.set_data()
+
+    @nextcord.ui.button(label="DECLINE", row=2, style=ButtonStyle.red, disabled=True)
+    async def main_decline_btn(self, button: Button, interaction: Interaction):
+        """Decline combining of streaks."""
+        if interaction.user != self.main:
+            return
+        child: Button
+        for child in self.children:
+            child.disabled = True
+        msg = "You have declined accepting the transfer."
+        await interaction.response.edit_message(content=msg, view=self)
+
+    def call_data(self):
+        """Check the stats of the alt account and set initial view of the view."""
+        self.og_alt: Optional[OGCounter] = og_collection.find_one({
+            "_id": self.alt.id})
+        self.og_main: Optional[OGCounter] = og_collection.find_one({
+            "_id": self.main.id})
+        if self.og_alt is None or self.og_main is None:
+            self.remove_item(self.og_btn)
+            self.og = False
+            self.streaks -= 1
+        elif "alt" in self.og_alt and self.og_alt["alt"] == self.main.id:
+            self.og = True
+            self.og_btn.style = ButtonStyle.green
+        elif "alt" in self.og_alt:
+            self.og = False
+            self.og_btn.style = ButtonStyle.red
+        else:
+            self.og = None
+            self.og_btn.style = ButtonStyle.grey
+
+        self.classic_alt: Optional[ClassicCounter] = classic_collection.find_one({
+            "_id": self.alt.id})
+        self.classic_main: Optional[ClassicCounter] = classic_collection.find_one({
+            "_id": self.main.id})
+        if self.classic_alt is None or self.classic_main is None:
+            self.remove_item(self.classic_btn)
+            self.classic = False
+            self.streaks -= 1
+        elif "alt" in self.classic_alt and self.classic_alt["alt"] == self.main.id:
+            self.classic = True
+            self.classic_btn.style = ButtonStyle.green
+        elif "alt" in self.classic_alt:
+            self.classic = False
+            self.classic_btn.style = ButtonStyle.red
+        else:
+            self.classic = None
+            self.classic_btn.style = ButtonStyle.grey
+
+        self.beta_alt: Optional[BetaCounter] = beta_collection.find_one({
+            "_id": self.alt.id})
+        self.beta_main: Optional[BetaCounter] = beta_collection.find_one({
+            "_id": self.main.id})
+        if self.beta_alt is None or self.beta_main is None:
+            self.remove_item(self.beta_btn)
+            self.beta = False
+            self.streaks -= 1
+        elif "alt" in self.beta_alt and self.beta_alt["alt"] == self.main.id:
+            self.beta = True
+            self.beta_btn.style = ButtonStyle.green
+        elif "alt" in self.beta_alt:
+            self.beta = False
+            self.beta_btn.style = ButtonStyle.red
+        else:
+            self.beta = None
+            self.beta_btn.style = ButtonStyle.grey
+
+        self.num_alt: Optional[NumselliCounter] = numselli_collection.find_one({
+            "_id": self.alt.id})
+        self.num_main: Optional[NumselliCounter] = numselli_collection.find_one({
+            "_id": self.main.id})
+        if self.num_alt is None or self.num_main is None:
+            self.remove_item(self.num_btn)
+            self.num = False
+            self.streaks -= 1
+        elif "alt" in self.num_alt and self.num_alt["alt"] == self.main.id:
+            self.num = True
+            self.num_btn.style = ButtonStyle.green
+        elif "alt" in self.num_alt:
+            self.num = False
+            self.num_btn.style = ButtonStyle.red
+        else:
+            self.num = None
+            self.num_btn.style = ButtonStyle.grey
+
+    def set_data(self):
+        """Set the data of transfer streaks in the database."""
+        msg = ""
+        if self.og_alt is not None and self.og_main is not None:
+            if self.og is True and ("alt" not in self.og_alt
+                                    or self.og_alt["alt"] != self.main.id):
+                og_collection.update_one(
+                    {"_id": self.alt.id}, {
+                        "$set": {
+                            "streak": f"{self.main.name}",
+                            "high": f"{self.main.name}",
+                            "alt": self.main.id
+                        }
+                    }
+                )
+                if "alt" in self.og_main:
+                    og_collection.update_one({
+                        "_id": self.main.id
+                    }, {
+                        "$unset": {"alt": 1, },
+                        "$set": {"streak": 0, "high": 0},
+                    })
+                msg += "\nOG streaks have been transferred."
+            elif (self.og is None and "alt" in self.og_alt):
+                og_collection.update_one({
+                    "_id": self.alt.id
+                }, {
+                    "$unset": {"alt": 1},
+                    "$set": {"streak": 0, "high": 0}
+                })
+
+        if self.classic_alt is not None and self.classic_main is not None:
+            if self.classic is True and ("alt" not in self.classic_alt or
+                                         self.classic_alt["alt"] != self.main.id):
+                classic_collection.update_one(
+                    {"_id": self.alt.id}, {
+                        "$set": {
+                            "streak": f"{self.main.name}",
+                            "high": f"{self.main.name}",
+                            "alt": self.main.id
+                        }
+                    }
+                )
+                if "alt" in self.classic_main:
+                    classic_collection.update_one(
+                        {"_id": self.main.id}, {
+                            "$unset": {"alt": 1, },
+                            "$set": {"streak": 0, "high": 0},
+                        }
+                    )
+                msg += "\nClassic streaks have been transferred."
+            elif (self.classic is None and "alt" in self.classic_alt):
+                classic_collection.update_one({
+                    "_id": self.alt.id
+                }, {
+                    "$unset": {"alt": 1},
+                    "$set": {"streak": 0, "high": 0}
+                })
+
+        if self.beta_alt is not None and self.beta_main is not None:
+            if self.beta is True and ("alt" not in self.beta_alt or
+                                      self.beta_alt["alt"] != self.main.id):
+                beta_collection.update_one(
+                    {"_id": self.alt.id}, {
+                        "$set": {
+                            "streak": f"{self.main.name}",
+                            "high": f"{self.main.name}",
+                            "alt": self.main.id
+                        }
+                    }
+                )
+                if "alt" in self.beta_main:
+                    beta_collection.update_one(
+                        {"_id": self.main.id}, {
+                            "$unset": {"alt": 1, },
+                            "$set": {"streak": 0, "high": 0},
+                        }
+                    )
+                msg += "\Beta streaks have been transferred."
+            elif (self.beta is None and "alt" in self.beta_alt):
+                beta_collection.update_one({
+                    "_id": self.alt.id
+                }, {
+                    "$unset": {"alt": 1},
+                    "$set": {"streak": 0, "high": 0}
+                })
+
+        if self.num_alt is not None and self.num_main is not None:
+            if self.num is True and ("alt" not in self.num_alt or
+                                     self.num_alt["alt"] != self.main.id):
+                numselli_collection.update_one(
+                    {"_id": self.alt.id}, {
+                        "$set": {
+                            "streak": f"{self.main}",
+                            "high": f"{self.main}",
+                            "alt": self.main.id
+                        }
+                    }
+                )
+                if "alt" in self.num_main:
+                    numselli_collection.update_one({
+                        "_id": self.main.id
+                    }, {
+                        "$unset": {"alt": 1},
+                        "$set": {"streak": 0, "high": 0},
+                    })
+                msg += "\nNumselli streaks have been transferred."
+            elif (self.num is None and "alt" in self.num_alt):
+                numselli_collection.update_one({
+                    "_id": self.alt.id
+                }, {
+                    "$unset": {"alt": 1},
+                    "$set": {"streak": 0, "high": 0}
+                })
+
+        return msg
 
 def setup(bot:commands.Bot):
     bot.add_cog(Stats(bot))
