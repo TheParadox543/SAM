@@ -628,7 +628,7 @@ class Monitor(commands.Cog):
                 user_id = message.mentions[0].id
                 if channel == og_channel and author.id == og_bot:
                     if re.findall("guild save", content):
-                        self.ruin_ban(user)
+                        await self.ruin_ban(user)
                         msg_send = "Why did you count without a save "
                         msg_send += f"{user.mention}!!!"
                         await message.channel.send(msg_send)
@@ -1097,7 +1097,8 @@ class Monitor(commands.Cog):
                         message.interaction.name == "user"):
                     await self.numselli_user_update(message)
                 embed_content = message.embeds[0].to_dict()
-                if re.match("Sent", embed_content["title"]):
+                if ("title" in embed_content 
+                        and re.match("Sent", embed_content["title"])):
                     nums = re.findall("\d+\.*\d*", embed_content["description"])
                     sent_saves = float(nums[0])
                     rec_id = int(nums[1])
