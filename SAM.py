@@ -24,6 +24,7 @@ bot = commands.Bot(
     description=descr,
 )
 
+
 @bot.event
 async def on_ready():
     """To log when the bot is ready for use"""
@@ -31,6 +32,7 @@ async def on_ready():
     check_time.start()
     daily.start()
     print(f"We have logged in as {bot.user}")
+
 
 class Vote(commands.Cog):
     def __init__(self, bot):
@@ -44,14 +46,15 @@ class Vote(commands.Cog):
         msg += "voting for it. Thanks all the same. 🤗 😍"
         await ctx.send(msg)
 
+
 @tasks.loop(seconds=0.9)
 async def check_time():
     time_now = datetime.utcnow().replace(tzinfo=None, microsecond=0)
-    if time_collection.find_one({"time":time_now}):
-        time_cursor = time_collection.find({"time":time_now})
+    if time_collection.find_one({"time": time_now}):
+        time_cursor = time_collection.find({"time": time_now})
         for cursor in time_cursor:
-            user_id:int = cursor["user"]
-            command:str = cursor["command"]
+            user_id: int = cursor["user"]
+            command: str = cursor["command"]
             dm = cursor.get("dm", False)
             if dm:
                 user = bot.get_user(user_id)
@@ -59,30 +62,31 @@ async def check_time():
                     user = await bot.fetch_user(user_id)
                 await user.send(f"Time to {command}.")
             else:
-                channel_send_id:int = cursor.get("channel", 
-                    scores_channel if command != "work shift" else dank_channel)
-                channel_send:TextChannel = bot.get_channel(channel_send_id)
+                channel_send_id: int = cursor.get(
+                    "channel",
+                    scores_channel if command != "work shift" else dank_channel,
+                )
+                channel_send: TextChannel = bot.get_channel(channel_send_id)
                 if command == "work shift":
                     command = f"</{command}:1011560371267579942>"
                 await channel_send.send(f"<@{user_id}> time to {command}.")
 
-@tasks.loop(time=time(hour=23,minute=59,second=59,tzinfo=None))
+
+@tasks.loop(time=time(hour=23, minute=59, second=59, tzinfo=None))
 async def daily():
     time = datetime.utcnow().isoformat()[:10]
-    cursor = og_collection.find({
-            "daily":{
-                "$gte": 1
-            }
-        }, {
+    cursor = og_collection.find(
+        {"daily": {"$gte": 1}},
+        {
             "name": 1,
             "daily": 1,
-        }
+        },
     ).sort("daily", -1)
     msg = "Total numbers counted today: <!@#TOTALCOUNTED!@#>"
     total = 0
     i = 0
     for user in cursor:
-        i += 1 
+        i += 1
         name = user.get("name", "Unknown")
         daily = user.get("daily", ">1")
         try:
@@ -92,21 +96,13 @@ async def daily():
         msg += f"\n{i}. {name} - {daily}"
     msg = msg.replace("<!@#TOTALCOUNTED!@#>", str(total), 1)
     embedVar = Embed(title=f"{time}", description=msg, color=color_lamuse)
-    scores:TextChannel = bot.get_channel(sam_channel)
+    scores: TextChannel = bot.get_channel(sam_channel)
     await scores.send(embed=embedVar)
-    og_collection.update_many({
-            "daily": {
-                "$gte": 1
-            }
-        }, {
-            "$set": {
-                "daily": 0
-            }
-        }
-    )
+    og_collection.update_many({"daily": {"$gte": 1}}, {"$set": {"daily": 0}})
+
 
 @bot.event
-async def on_command_error(ctx:Context, error):
+async def on_command_error(ctx: Context, error):
     if isinstance(error, commands.MissingPermissions):
         msg = "You do not have the required permissions to use this command"
         await ctx.reply(msg)
@@ -123,13 +119,16 @@ async def on_command_error(ctx:Context, error):
     else:
         raise error
 
+
 @bot.event
-async def on_application_command_error(ctx:nextcord.Interaction, 
-        error:nextcord.errors.ApplicationError):
+async def on_application_command_error(
+    ctx: nextcord.Interaction, error: nextcord.errors.ApplicationError
+):
     if isinstance(error, nextcord.errors.ApplicationInvokeError):
-        ctx.send("Something went wrong", ephemeral=True)
+        await ctx.send("Something went wrong", ephemeral=True)
     else:
         raise error
+
 
 r = requests.head(url="https://discord.com/api/v1")
 try:
@@ -137,14 +136,17 @@ try:
 except:
     print("No rate limit")
 
-bot.load_extensions([
-    "admincommands",
-    "list",
-    "monitor",
-    "reminders",
-    "stats",
-    "utils",
-])
+bot.load_extensions(
+    [
+        "admincommands",
+        "list",
+        "lottery",
+        "monitor",
+        "reminders",
+        "stats",
+        "utils",
+    ]
+)
 bot.add_cog(Vote(bot))
 
 bot.run(BOT_TOKEN)
