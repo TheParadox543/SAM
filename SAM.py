@@ -1,44 +1,81 @@
+"""
+Code for SAM - version 3.0.0
+
+This is the code for the bot in nextcord.
+
+Author: Samuel Alex Koshy (Paradox543#3217 on Discord)
+Version start date: 2022/08/25
+"""
+import os
 from datetime import datetime, time, timedelta
-import requests
+from typing import cast
 
 import nextcord
+from dotenv import load_dotenv
 from nextcord import Embed, TextChannel
-from nextcord.ext import commands, tasks
-from nextcord.ext.commands.core import Context
+from nextcord.ext import tasks
+from nextcord.ext.commands import (
+    Bot,
+    Cog,
+    CommandNotFound,
+    Context,
+    MissingRequiredArgument,
+    command,
+)
+from nextcord.errors import Forbidden
 
-from bot_secrets import *
-from database import *
+from bot_secrets import (
+    DANK_CHANNEL_ID,
+    PARADOX_ID,
+    SAM_CHANNEL_ID,
+    SCORES_CHANNEL_ID,
+    color_lamuse,
+    servers,
+)
+from database import og_collection, time_collection, db
 
-descr = "The Super Assistive Machine gives you roles to count if you have "
-descr += "enough saves. It also tracks stuff like streaks, run time and "
-descr += "many other little helpful features."
+load_dotenv()
+
+description = (
+    "The Super Assistive Machine is the helpful bot of Countaholics"
+    " that gives you roles to count if you have "
+    "enough saves. It also tracks stuff like streaks, run time and "
+    "many other little helpful features."
+)
 
 intents = nextcord.Intents.all()
-"""Creating object of the bot"""
-bot = commands.Bot(
-    command_prefix=("?"),
-    case_insensitive=True,
-    strip_after_prefix=True,
-    owner_id=paradox_id,
+bot = Bot(
+    command_prefix="?",
     intents=intents,
-    description=descr,
+    owner_id=PARADOX_ID,
+    description=description,
+    case_insensitive=True,
 )
 
 
 @bot.event
 async def on_ready():
-    """To log when the bot is ready for use"""
+    """Declare when the bot is ready and works."""
     await bot.change_presence(activity=nextcord.Game("?help"))
     check_time.start()
-    daily.start()
     print(f"We have logged in as {bot.user}")
 
 
-class Vote(commands.Cog):
+@bot.slash_command(guild_ids=servers)
+async def hello(interaction: nextcord.Interaction):
+    await interaction.send("Hello")
+
+
+@bot.command()
+async def test(ctx: Context):
+    await ctx.send("Reply")
+
+
+class Vote(Cog):
     def __init__(self, bot):
         self.bot = bot
 
-    @commands.command()
+    @command()
     async def vote(self, ctx):
         """Vote for the bot"""
         msg = "Thanks for caring about the bot enough to vote for it, "
@@ -49,73 +86,48 @@ class Vote(commands.Cog):
 
 @tasks.loop(seconds=0.9)
 async def check_time():
-    time_now = datetime.utcnow().replace(tzinfo=None, microsecond=0)
-    if time_collection.find_one({"time": time_now}):
-        time_cursor = time_collection.find({"time": time_now})
-        for cursor in time_cursor:
-            user_id: int = cursor["user"]
-            command: str = cursor["command"]
-            dm = cursor.get("dm", False)
-            if dm:
-                user = bot.get_user(user_id)
-                if user is None:
-                    user = await bot.fetch_user(user_id)
+    time_now = datetime.utcnow().replace(tzinfo=None)
+    for cursor in time_collection.find({"time": {"$lt": time_now}}):
+        user_id: int = cursor["user"]
+        command: str = cursor["command"]
+        dm = cursor.get("dm", False)
+        if dm:
+            user = bot.get_user(user_id)
+            if user is None:
+                user = await bot.fetch_user(user_id)
+            try:
                 await user.send(f"Time to {command}.")
-            else:
-                channel_send_id: int = cursor.get(
-                    "channel",
-                    scores_channel if command != "work shift" else dank_channel,
-                )
-                channel_send: TextChannel = bot.get_channel(channel_send_id)
-                if command == "work shift":
-                    command = f"</{command}:1011560371267579942>"
-                await channel_send.send(f"<@{user_id}> time to {command}.")
-
-
-@tasks.loop(time=time(hour=23, minute=59, second=59, tzinfo=None))
-async def daily():
-    time = datetime.utcnow().isoformat()[:10]
-    cursor = og_collection.find(
-        {"daily": {"$gte": 1}},
-        {
-            "name": 1,
-            "daily": 1,
-        },
-    ).sort("daily", -1)
-    msg = "Total numbers counted today: <!@#TOTALCOUNTED!@#>"
-    total = 0
-    i = 0
-    for user in cursor:
-        i += 1
-        name = user.get("name", "Unknown")
-        daily = user.get("daily", ">1")
-        try:
-            total += int(daily)
-        except:
-            pass
-        msg += f"\n{i}. {name} - {daily}"
-    msg = msg.replace("<!@#TOTALCOUNTED!@#>", str(total), 1)
-    embedVar = Embed(title=f"{time}", description=msg, color=color_lamuse)
-    scores: TextChannel = bot.get_channel(sam_channel)
-    await scores.send(embed=embedVar)
-    og_collection.update_many({"daily": {"$gte": 1}}, {"$set": {"daily": 0}})
+            except Forbidden:
+                time_collection.update_one(cursor, {"$set": {"dm": False}})
+                continue
+        else:
+            channel_send_id: int = cursor.get(
+                "channel",
+                SCORES_CHANNEL_ID if command != "work shift" else DANK_CHANNEL_ID,
+            )
+            channel_send = bot.get_channel(channel_send_id)
+            if not isinstance(channel_send, TextChannel):
+                return
+            if command == "work shift":
+                command = f"</{command}:1011560371267579942>"
+            await channel_send.send(f"<@{user_id}> time to {command}.")
+        time_collection.delete_one(cursor)
+    # if dank_collection.find_one({"time":time_now}):
+    #     time_cursor = dank_collection.find({"time":time_now})
+    #     dank_chnl = bot.get_channel(dank_channel)
+    #     for cursor in time_cursor:
+    #         user = cursor['user']
+    #         command = cursor['command']
+    #         await dank_chnl.send(f"<@{user}> time to {command}")
+    #         dank_collection.delete_one(cursor)
 
 
 @bot.event
 async def on_command_error(ctx: Context, error):
-    if isinstance(error, commands.MissingPermissions):
-        msg = "You do not have the required permissions to use this command"
-        await ctx.reply(msg)
-    elif isinstance(error, commands.MissingRequiredArgument):
-        await ctx.reply("Command is missing an argument")
-    elif isinstance(error, commands.CheckFailure):
-        await ctx.reply("You don't have the required permissions. ")
-    elif isinstance(error, commands.BadLiteralArgument):
-        await ctx.reply("Not a valid choice")
-    elif isinstance(error, commands.CommandNotFound):
+    if isinstance(error, MissingRequiredArgument):
+        await ctx.send("Command is missing an argument.")
+    elif isinstance(error, CommandNotFound):
         pass
-    elif isinstance(error, commands.MemberNotFound):
-        await ctx.reply("Member not found")
     else:
         raise error
 
@@ -126,27 +138,21 @@ async def on_application_command_error(
 ):
     if isinstance(error, nextcord.errors.ApplicationInvokeError):
         await ctx.send("Something went wrong", ephemeral=True)
+        raise error
     else:
         raise error
 
 
-r = requests.head(url="https://discord.com/api/v1")
-try:
-    print(f"Rate limit {int(r.headers['Retry-After']) / 60} minutes left")
-except:
-    print("No rate limit")
-
 bot.load_extensions(
     [
-        "admincommands",
+        "admin",
         "list",
-        "lottery",
         "monitor",
         "reminders",
         "stats",
-        "utils",
+        # "utils",
     ]
 )
-bot.add_cog(Vote(bot))
 
-bot.run(BOT_TOKEN)
+# bot.run(os.getenv("SAM_TEST"))
+bot.run(os.getenv("SAM_TOKEN"))

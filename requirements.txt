@@ -4,3 +4,4 @@ pymongo
 dnspython
 typing
 certifi
+python-dotenv

@@ -7,6 +7,7 @@ class BaseCounter(TypedDict):
     wrong: int
     streak: Union[int, str]
     high: Union[int, str]
+    alt: int
 
 class OGCounter(BaseCounter, total=False):
     current_saves: float
@@ -23,6 +24,9 @@ class BetaCounter(BaseCounter, total=False):
     current_saves: int
     total_saves: int
     counter: bool
+
+class YodaCounter(BaseCounter, total=False):
+    tokens: float
 
 class NumselliCounter(BaseCounter, total=False):
     current_saves: float
