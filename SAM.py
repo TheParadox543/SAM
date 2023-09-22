@@ -150,6 +150,7 @@ bot.load_extensions(
         "monitor",
         "reminders",
         "stats",
+        "tree",
         # "utils",
     ]
 )
