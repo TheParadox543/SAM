@@ -205,7 +205,6 @@ class Tree(Cog):
                         except Exception as e:
                             logger.exception("Insect msg not sent")
                     elif button_count != 3 and len(self.insect_message) > 1:
-                        print(self.insect_message)
                         while len(self.insect_message) > 1:
                             try:
                                 await self.insect_message[0].delete()
