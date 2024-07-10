@@ -7,6 +7,7 @@ from typing import Union, cast
 
 import nextcord
 from nextcord import (
+    ButtonStyle,
     Embed,
     Guild,
     Interaction,
@@ -21,6 +22,7 @@ from nextcord import (
 from nextcord.abc import GuildChannel
 from nextcord.ext import commands, tasks
 from nextcord.ext.commands import Bot, Cog, Context
+from nextcord.ui import Button, View
 from nextcord.utils import format_dt, get, utcnow
 
 from bot_secrets import *
@@ -96,9 +98,21 @@ async def control_permission(saves: int | float, counter: Member, message: Messa
             )
     else:
         if role in counter.roles:
-            await counter.remove_roles(role, reason="Not enough saves")
+
+            async def button_callback(interaction: Interaction):
+                await counter.remove_roles(role, reason="Not enough saves")
+                await interaction.response.edit_message(
+                    content=f"{counter.mention} role has been removed",
+                    view=None,
+                )
+
+            button = Button(style=ButtonStyle.red)
+            button.callback = button_callback
+            view = View()
+            view.add_item(button)
             await message.channel.send(
-                f"{counter.mention} doesn't have enough saves to count with <@{bot_id}>."
+                f"{counter.mention} doesn't have enough saves to count with <@{bot_id}>.",
+                view=view,
             )
         else:
             reaction = get(guild.emojis, name="Incorrect")
@@ -624,11 +638,30 @@ class Monitor(Cog):
                 user = cast(Member, message.mentions[0])
                 user_id = user.id
                 if "guild" in content:
-                    await self.ruin_ban(user)
-                    msg_send = "Why did you count without a save "
-                    msg_send += f"{user.mention}!!!"
-                    await message.channel.send(msg_send)
+
+                    async def button_callback(interaction: Interaction):
+                        await self.ruin_ban(user)
+                        channel = message.channel
+                        if not isinstance(channel, TextChannel):
+                            return
+                        role = user.get_role(OG_SAVE_ID)
+                        if not isinstance(role, Role):
+                            return
+                        overwrites = channel.overwrites_for(role)
+                        overwrites.update(send_messages=False)
+                        await channel.set_permissions(role, overwrite=overwrites)
+                        await interaction.response.edit_message(
+                            content="Channel Locked", view=None
+                        )
+
+                    msg_send = "@everyone Guild save got used. LOCK THE CHANNEL"
+                    button = Button(label="LOCK", style=nextcord.ButtonStyle.red)
+                    button.callback = button_callback
+                    view = View()
+                    view.add_item(button)
+                    await message.channel.send(msg_send, view=view)
                     return
+
                 elif "of your saves" in content:
                     numbers_list = findall("[0-9]+", content)
                     saves_left = int(numbers_list[2])
@@ -831,20 +864,32 @@ class Monitor(Cog):
                     if "description" not in embed_content:
                         return
                     if match("Channel save", embed_content["description"]):
-                        have_save = guild.get_role(NUMSELLI_SAVE_ID)
-                        if have_save is None:
-                            return
-                        for user in have_save.members:
-                            await user.remove_roles(
-                                have_save, reason="Channel save got used"
+
+                        async def button_callback(interaction: Interaction):
+                            have_save = guild.get_role(NUMSELLI_SAVE_ID)
+                            if have_save is None:
+                                return
+                            for user in have_save.members:
+                                await user.remove_roles(
+                                    have_save, reason="Channel save got used"
+                                )
+                            await interaction.response.edit_message(
+                                content="Channel locked for all counters.",
+                                view=None,
                             )
+
                         channel_send = guild.get_channel(SAM_CHANNEL_ID)
                         if not isinstance(channel_send, TextChannel):
                             return
                         msg_send = f"Channel save got used "
                         msg_send += "in {message.channel.mention}."
                         await channel_send.send(msg_send)
-                        await message.channel.send("Channel locked for all counters.")
+                        msg_send = "@everyone channel save got used. LOCK THE CHANNEL"
+                        button = Button(label="LOCK", style=nextcord.ButtonStyle.red)
+                        button.callback = button_callback
+                        view = View()
+                        view.add_item(button)
+                        await channel.send(msg_send, view=view)
                     else:
                         nums = findall(
                             "[0-9]+\.*[0-9]*",  # type: ignore
@@ -1115,7 +1160,7 @@ class Monitor(Cog):
     async def slash_run(
         self,
         ctx: Interaction,
-        channel: GuildChannel
+        channel: GuildChannel,
         # = SlashOption(
         #     description="The channel you want to see run stats of",
         #     required=False,
